@@ -1,18 +1,19 @@
-Function.prototype.inheritsFrom = function(parentClassOrObject)
+/* Thanks to http://phrogz.net/js/classes/OOPinJS2.html */
+Function.prototype.inheritsFrom = function(parentObject)
 { 
-	if ( parentClassOrObject.constructor == Function ) 
+	if(parentClassOrObject.constructor == Function) 
 	{ 
-		//Normal Inheritance 
-		this.prototype = new parentClassOrObject;
+		/* Normal Inheritance */
+		this.prototype = new parentObject;
 		this.prototype.constructor = this;
-		this.prototype.parent = parentClassOrObject.prototype;
+		this.prototype.parent = parentObject.prototype;
 	} 
 	else 
 	{ 
-		//Pure Virtual Inheritance 
-		this.prototype = parentClassOrObject;
+		/* Pure Virtual Inheritance */
+		this.prototype = parentObject;
 		this.prototype.constructor = this;
-		this.prototype.parent = parentClassOrObject;
+		this.prototype.parent = parentObject;
 	}
 	
 	return this;
