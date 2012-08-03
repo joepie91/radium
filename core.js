@@ -1,7 +1,7 @@
 /* Thanks to http://phrogz.net/js/classes/OOPinJS2.html */
 Function.prototype.inheritsFrom = function(parentObject)
 { 
-	if(parentClassOrObject.constructor == Function) 
+	if(parentObject.constructor == Function) 
 	{ 
 		/* Normal Inheritance */
 		this.prototype = new parentObject;
