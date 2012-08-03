@@ -22,4 +22,11 @@ Function.prototype.inheritsFrom = function(parentObject)
 /*Class*/ RadiumEngine = function()
 {
 	this.version = "1.0";
+	
+	var point_distance = this.point_distance = function(x1, y1, x2, y2)
+	{
+		var xL = x1 - x2;
+		var yL = y1 - y2;
+		return Math.sqrt((xL * xL) + (yL * yL));
+	}
 }
