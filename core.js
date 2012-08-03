@@ -17,3 +17,8 @@ Function.prototype.inheritsFrom = function(parentClassOrObject)
 	
 	return this;
 }
+
+/*Class*/ RadiumEngine = function()
+{
+	this.version = "1.0";
+}
