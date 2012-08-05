@@ -131,6 +131,35 @@ Function.prototype.inheritsFrom = function(parentObject)
 				throw new ResourceException("This resource does not exist.", resource, "give");
 			}
 		}
+		
+		this.SetResource = function(resource, amount)
+		{
+			if(this.resources[resource])
+			{
+				resource_object = this.resources[resource];
+				
+				if(resource_object.minimum != null && amount < resource_object.minimum)
+				{
+					throw new ResourceException("The specified amount is lower than the lower boundary of the resource.", resource, "set");
+				}
+				else if(resource_object.maximum != null && amount > resource_object.maximum)
+				{
+					throw new ResourceException("The specified amount is lower than the lower boundary of the resource.", resource, "set");
+				}
+				else if(resource_object.negative_allowed === false && amount < 0)
+				{
+					throw new ResourceException("This resource cannot be set to a negative amount.", resource, "set");
+				}
+				else
+				{
+					resource_object.value = amount;
+				}
+			}
+			else
+			{
+				throw new ResourceException("This resource does not exist.", resource, "set");
+			}
+		}
 	}
 	
 	var /*Class*/ Resource = this.Resource = function()
