@@ -63,6 +63,8 @@ if(RadiumEngine !== undefined)
 				for(var r = 0; r < this.width; r++)
 				{
 					this.DrawTile(r, i);
+					pos = this.GetTilePosition(r, i);
+					this.context.fillRect(pos.x, pos.y, 1, 1);
 				}
 			}
 		}
@@ -150,6 +152,13 @@ if(RadiumEngine !== undefined)
 			console.log(tile_offset);
 			/* Return the sum of the above to determine the actual tile position on the canvas. */
 			return base_point.Add(row_offset, tile_offset);
+		}
+		
+		this.GetTilePosition = function(tile_x, tile_y)
+		{
+			origin = this.GetTileOrigin(tile_x, tile_y);
+			
+			return origin.Add(new RadiumEngine.Point(0 - (this.tile_width / 2), 0));
 		}
 	}
 }
