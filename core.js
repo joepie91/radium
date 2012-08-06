@@ -178,7 +178,7 @@ Function.prototype.inheritsFrom = function(parentObject)
 		this.Add = function()
 		{
 			var new_point = new RadiumEngine.Point(this.x, this.y);
-			console.log(arguments);
+			
 			for (i in arguments)
 			{
 				new_point.x += arguments[i].x;
@@ -207,5 +207,18 @@ Function.prototype.inheritsFrom = function(parentObject)
 		var xL = x1 - x2;
 		var yL = y1 - y2;
 		return Math.sqrt((xL * xL) + (yL * yL));
+	}
+	
+	RadiumEngine.dot_product = function(a, b)
+	{
+		var n = 0;
+		var lim = Math.min(a.length, b.length);
+		
+		for (var i = 0; i < lim; i++) 
+		{
+			n += a[i] * b[i];
+		}
+		
+		return n;
 	}
 }
