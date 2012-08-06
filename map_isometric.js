@@ -36,15 +36,11 @@ if(RadiumEngine !== undefined)
 			if(coords.x >= 0 && coords.x < self.width && coords.y >= 0 && coords.y < self.height)
 			{
 				self.mouse_in = true;
-				$('#status').html("in");
 			}
 			else
 			{
 				self.mouse_in = false;
-				$('#status').html("out");
 			}
-			
-			/*$('#status').html(coords.x + " , " + coords.y);*/
 			
 			self.Redraw();
 		});
