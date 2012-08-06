@@ -6,10 +6,25 @@ if(RadiumEngine !== undefined)
 		this.tile_height = 64;
 		this.width = 6;
 		this.height = 6;
+		this.mouse_tile_x = 0;
+		this.mouse_tile_y = 0;
+		this.mouse_over = false;
 		this.fill_screen = false;
 		
 		this.canvas = canvas
 		this.context = canvas.getContext("2d");
+		
+		$(this.canvas).bind('click', {'self': this}, function(event){
+			self = event.data.self;
+			
+			var rect = self.canvas.getBoundingClientRect();
+			var root = document.documentElement;
+			var mouse_x = event.clientX - rect.top - root.scrollTop;
+			var mouse_y = event.clientY - rect.left - root.scrollLeft;
+			var coords = event.data.self.TileFromPosition(mouse_x, mouse_y);
+			
+			alert("You clicked the tile at map coordinate " + coords.x + "," + coords.y + "!");
+		});
 		
 		var Configure = this.Configure = function(tile_width, tile_height)
 		{
@@ -57,7 +72,6 @@ if(RadiumEngine !== undefined)
 		
 		var Redraw = this.Redraw = function()
 		{
-			console.log(this)
 			for(var i = 0; i < this.height; i++)
 			{
 				for(var r = 0; r < this.width; r++)
@@ -139,17 +153,22 @@ if(RadiumEngine !== undefined)
 			this.context.stroke();
 		}
 		
+		this.GetBasePoint = function()
+		{
+			return new RadiumEngine.Point((this.width * this.tile_width) / 2, 0);
+		}
+		
 		this.GetTileOrigin = function(tile_x, tile_y)
 		{
 			/* Determine base point (0,0) of the isometric diamond. */
-			base_point = new RadiumEngine.Point((this.width * this.tile_width) / 2, 0);
-			console.log(base_point);
+			base_point = this.GetBasePoint();
+			
 			/* Determine offset for determining starting point for the current row (tile_y coordinate). */
 			row_offset = new RadiumEngine.Point(0 - ((this.tile_width / 2) * tile_y), (this.tile_height / 2) * tile_y);
-			console.log(row_offset);
+			
 			/* Determine specific offset of the specified tile_x coordinate on the tile_y row. */
 			tile_offset = new RadiumEngine.Point((this.tile_width / 2) * tile_x, (this.tile_height / 2) * tile_x);
-			console.log(tile_offset);
+			
 			/* Return the sum of the above to determine the actual tile position on the canvas. */
 			return base_point.Add(row_offset, tile_offset);
 		}
@@ -159,6 +178,33 @@ if(RadiumEngine !== undefined)
 			origin = this.GetTileOrigin(tile_x, tile_y);
 			
 			return origin.Add(new RadiumEngine.Point(0 - (this.tile_width / 2), 0));
+		}
+		
+		this.TileFromPosition = function(x, y)
+		{
+			p = new RadiumEngine.Point(x, y);
+			a = self.GetBasePoint();
+			b = a.Add(new RadiumEngine.Point(0 - (this.tile_width / 2), this.tile_height / 2));
+			c = a.Add(new RadiumEngine.Point(this.tile_width / 2, this.tile_height / 2));
+			
+			/* Compute vectors. */    
+			v0 = c.Subtract(a);
+			v1 = b.Subtract(a);
+			v2 = p.Subtract(a);
+
+			/* Compute dot products. */
+			dot00 = RadiumEngine.dot_product([v0.x, v0.y], [v0.x, v0.y]);
+			dot01 = RadiumEngine.dot_product([v0.x, v0.y], [v1.x, v1.y]);
+			dot02 = RadiumEngine.dot_product([v0.x, v0.y], [v2.x, v2.y]);
+			dot11 = RadiumEngine.dot_product([v1.x, v1.y], [v1.x, v1.y]);
+			dot12 = RadiumEngine.dot_product([v1.x, v1.y], [v2.x, v2.y]);
+
+			/* Compute tile. */
+			inv_denom = 1 / (dot00 * dot11 - dot01 * dot01);
+			tile_x = (dot11 * dot02 - dot01 * dot12) * inv_denom;
+			tile_y = (dot00 * dot12 - dot01 * dot02) * inv_denom;
+			
+			return new RadiumEngine.Point(Math.floor(tile_x), Math.floor(tile_y));
 		}
 	}
 }
