@@ -202,6 +202,14 @@ if(RadiumEngine !== undefined)
 			return origin.Add(new RadiumEngine.Point(0 - (this.tile_width / 2), 0));
 		}
 		
+		this.GetRangePosition = function(start, size)
+		{
+			x = this.GetTilePosition(start.x, start.y + size.y).x;
+			y = this.GetTilePosition(start.x, start.y).y;
+			
+			return new RadiumEngine.Point(x, y);
+		}
+		
 		this.TileFromPosition = function(x, y)
 		{
 			p = new RadiumEngine.Point(x, y);
