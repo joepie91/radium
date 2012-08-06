@@ -4,8 +4,8 @@ if(RadiumEngine !== undefined)
 	{
 		this.tile_width = 32;
 		this.tile_height = 64;
-		this.width = 20;
-		this.height = 20;
+		this.width = 6;
+		this.height = 6;
 		this.fill_screen = false;
 		
 		this.canvas = canvas
@@ -58,9 +58,9 @@ if(RadiumEngine !== undefined)
 		var Redraw = this.Redraw = function()
 		{
 			console.log(this)
-			for(var i = 0; i < 6; i++)
+			for(var i = 0; i < this.height; i++)
 			{
-				for(var r = 0; r < 6; r++)
+				for(var r = 0; r < this.width; r++)
 				{
 					this.DrawTile(r, i);
 				}
@@ -72,10 +72,15 @@ if(RadiumEngine !== undefined)
 			var pos_x = tile_x * this.tile_width;
 			var pos_y = tile_y * this.tile_height;
 			
-			var t1 = new RadiumEngine.Point(pos_x + (this.tile_width / 2), pos_y);
+			var t1 = this.GetTilePosition(tile_x, tile_y);
+			var t2 = t1.Add(new RadiumEngine.Point(this.tile_width / 2, this.tile_height / 2));
+			var t3 = t1.Add(new RadiumEngine.Point(0, this.tile_height));
+			var t4 = t1.Add(new RadiumEngine.Point(0 - (this.tile_width / 2), this.tile_height / 2));
+			
+			/*var t1 = new RadiumEngine.Point(pos_x + (this.tile_width / 2), pos_y);
 			var t2 = new RadiumEngine.Point(pos_x + this.tile_width, pos_y + (this.tile_height / 2));
 			var t3 = new RadiumEngine.Point(pos_x + (this.tile_width / 2), pos_y + this.tile_height);
-			var t4 = new RadiumEngine.Point(pos_x, pos_y + (this.tile_height / 2));
+			var t4 = new RadiumEngine.Point(pos_x, pos_y + (this.tile_height / 2));*/
 			
 			this.context.beginPath();
 			
@@ -85,21 +90,66 @@ if(RadiumEngine !== undefined)
 			this.context.lineTo(t4.x, t4.y);
 			this.context.lineTo(t1.x, t1.y);
 			
-			this.context.lineWidth = 1;
-			this.context.strokeStyle = "blue";
+			switch(tile_y)
+			{
+				case 0:
+					this.context.lineWidth = 1;
+					break;
+				case 1:
+					this.context.lineWidth = 2;
+					break;
+				case 2:
+					this.context.lineWidth = 3;
+					break;
+				case 3:
+					this.context.lineWidth = 4;
+					break;
+				case 4:
+					this.context.lineWidth = 5;
+					break;
+				case 5:
+					this.context.lineWidth = 6;
+					break;
+			}
+			
+			switch(tile_x)
+			{
+				case 0:
+					this.context.strokeStyle = "blue";
+					break;
+				case 1:
+					this.context.strokeStyle = "purple";
+					break;
+				case 2:
+					this.context.strokeStyle = "green";
+					break;
+				case 3:
+					this.context.strokeStyle = "red";
+					break;
+				case 4:
+					this.context.strokeStyle = "maroon";
+					break;
+				case 5:
+					this.context.strokeStyle = "black";
+					break;
+			}
+			
 			this.context.stroke();
-			
-			this.context.beginPath();
-			
-			this.context.moveTo(pos_x, pos_y);
-			this.context.lineTo(pos_x + this.tile_width, pos_y);
-			this.context.lineTo(pos_x + this.tile_width, pos_y + this.tile_height);
-			this.context.lineTo(pos_x, pos_y + this.tile_height);
-			this.context.lineTo(pos_x, pos_y);
-			
-			this.context.lineWidth = 1;
-			this.context.strokeStyle = "red";
-			this.context.stroke();
+		}
+		
+		this.GetTilePosition = function(tile_x, tile_y)
+		{
+			/* Determine base point (0,0) of the isometric diamond. */
+			base_point = new RadiumEngine.Point((this.width * this.tile_width) / 2, 0);
+			console.log(base_point);
+			/* Determine offset for determining starting point for the current row (tile_y coordinate). */
+			row_offset = new RadiumEngine.Point(0 - ((this.tile_width / 2) * tile_y), (this.tile_height / 2) * tile_y);
+			console.log(row_offset);
+			/* Determine specific offset of the specified tile_x coordinate on the tile_y row. */
+			tile_offset = new RadiumEngine.Point((this.tile_width / 2) * tile_x, (this.tile_height / 2) * tile_x);
+			console.log(tile_offset);
+			/* Return the sum of the above to determine the actual tile position on the canvas. */
+			return base_point.Add(row_offset, tile_offset);
 		}
 	}
 }
