@@ -204,7 +204,7 @@ if(RadiumEngine !== undefined)
 		
 		this.GetRangePosition = function(start, size)
 		{
-			x = this.GetTilePosition(start.x, start.y + size.y).x;
+			x = this.GetTilePosition(start.x, start.y + size.y - 1).x;
 			y = this.GetTilePosition(start.x, start.y).y;
 			
 			return new RadiumEngine.Point(x, y);
