@@ -95,11 +95,6 @@ if(RadiumEngine !== undefined)
 			var t3 = t1.Add(new RadiumEngine.Point(0, this.tile_height));
 			var t4 = t1.Add(new RadiumEngine.Point(0 - (this.tile_width / 2), this.tile_height / 2));
 			
-			/*var t1 = new RadiumEngine.Point(pos_x + (this.tile_width / 2), pos_y);
-			var t2 = new RadiumEngine.Point(pos_x + this.tile_width, pos_y + (this.tile_height / 2));
-			var t3 = new RadiumEngine.Point(pos_x + (this.tile_width / 2), pos_y + this.tile_height);
-			var t4 = new RadiumEngine.Point(pos_x, pos_y + (this.tile_height / 2));*/
-			
 			this.context.beginPath();
 			
 			this.context.moveTo(t1.x, t1.y);
