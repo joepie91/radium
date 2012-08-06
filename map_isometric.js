@@ -7,8 +7,6 @@ if(RadiumEngine !== undefined)
 		this.width = 6;
 		this.height = 6;
 		this.mouse_tile = undefined;
-		this.mouse_tile_x = 0;
-		this.mouse_tile_y = 0;
 		this.mouse_over = false;
 		this.fill_screen = false;
 		
