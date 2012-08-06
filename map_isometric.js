@@ -72,7 +72,7 @@ if(RadiumEngine !== undefined)
 			var pos_x = tile_x * this.tile_width;
 			var pos_y = tile_y * this.tile_height;
 			
-			var t1 = this.GetTilePosition(tile_x, tile_y);
+			var t1 = this.GetTileOrigin(tile_x, tile_y);
 			var t2 = t1.Add(new RadiumEngine.Point(this.tile_width / 2, this.tile_height / 2));
 			var t3 = t1.Add(new RadiumEngine.Point(0, this.tile_height));
 			var t4 = t1.Add(new RadiumEngine.Point(0 - (this.tile_width / 2), this.tile_height / 2));
@@ -137,7 +137,7 @@ if(RadiumEngine !== undefined)
 			this.context.stroke();
 		}
 		
-		this.GetTilePosition = function(tile_x, tile_y)
+		this.GetTileOrigin = function(tile_x, tile_y)
 		{
 			/* Determine base point (0,0) of the isometric diamond. */
 			base_point = new RadiumEngine.Point((this.width * this.tile_width) / 2, 0);
