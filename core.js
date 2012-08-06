@@ -171,7 +171,13 @@ Function.prototype.inheritsFrom = function(parentObject)
 		this.value = 0;
 	}
 	
-	var point_distance = this.point_distance = function(x1, y1, x2, y2)
+	var /*Static Class*/ Point = RadiumEngine.Point = function(x, y)
+	{
+		this.x = x;
+		this.y = y;
+	}
+	
+	var /*Static*/ point_distance = RadiumEngine.point_distance = function(x1, y1, x2, y2)
 	{
 		var xL = x1 - x2;
 		var yL = y1 - y2;
