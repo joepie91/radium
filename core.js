@@ -187,6 +187,19 @@ Function.prototype.inheritsFrom = function(parentObject)
 			
 			return new_point;
 		}
+		
+		this.Subtract = function()
+		{
+			var new_point = new RadiumEngine.Point(this.x, this.y);
+			
+			for (i in arguments)
+			{
+				new_point.x -= arguments[i].x;
+				new_point.y -= arguments[i].y;
+			}
+			
+			return new_point;
+		}
 	}
 	
 	var /*Static*/ point_distance = RadiumEngine.point_distance = function(x1, y1, x2, y2)
