@@ -22,7 +22,6 @@ Function.prototype.inheritsFrom = function(parentObject)
 /*Class*/ RadiumEngine = function()
 {
 	this.version = "1.0";
-	var blah = "derp";
 	
 	var /*Exception*/ Exception = this.Exception = function(message)
 	{
