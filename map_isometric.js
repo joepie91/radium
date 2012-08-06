@@ -8,6 +8,7 @@ if(RadiumEngine !== undefined)
 		this.height = 6;
 		this.mouse_tile = undefined;
 		this.mouse_over = false;
+		this.mouse_in = false;
 		this.fill_screen = false;
 		
 		this.canvas = canvas
@@ -31,6 +32,18 @@ if(RadiumEngine !== undefined)
 			var coords = event.data.self.TileFromPosition(mouse_x, mouse_y);
 			
 			self.mouse_tile = coords;
+			
+			if(coords.x >= 0 && coords.x < self.width && coords.y >= 0 && coords.y < self.height)
+			{
+				self.mouse_in = true;
+				$('#status').html("in");
+			}
+			else
+			{
+				self.mouse_in = false;
+				$('#status').html("out");
+			}
+			
 			/*$('#status').html(coords.x + " , " + coords.y);*/
 			
 			self.Redraw();
