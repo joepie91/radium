@@ -24,8 +24,10 @@ if(RadiumEngine !== undefined)
 			var mouse_y = event.clientY - rect.left - root.scrollLeft;
 			var coords = event.data.self.TileFromPosition(mouse_x, mouse_y);
 			
-			this.mouse_tile = coords;
+			self.mouse_tile = coords;
 			/*$('#status').html(coords.x + " , " + coords.y);*/
+			
+			self.Redraw();
 		});
 		
 		var Configure = this.Configure = function(tile_width, tile_height)
@@ -74,13 +76,15 @@ if(RadiumEngine !== undefined)
 		
 		var Redraw = this.Redraw = function()
 		{
+			this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+			
 			for(var i = 0; i < this.height; i++)
 			{
 				for(var r = 0; r < this.width; r++)
 				{
 					this.DrawTile(r, i);
-					pos = this.GetTilePosition(r, i);
-					this.context.fillRect(pos.x, pos.y, 1, 1);
+					/*pos = this.GetTilePosition(r, i);
+					this.context.fillRect(pos.x, pos.y, 1, 1);*/
 				}
 			}
 		}
@@ -145,6 +149,12 @@ if(RadiumEngine !== undefined)
 				case 5:
 					this.context.strokeStyle = "black";
 					break;
+			}
+			
+			if(this.mouse_tile !== undefined && tile_x == this.mouse_tile.x && tile_y == this.mouse_tile.y)
+			{
+				this.context.fillStyle = "#D9FFB4";
+				this.context.fill();
 			}
 			
 			this.context.stroke();
