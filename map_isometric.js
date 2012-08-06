@@ -13,6 +13,14 @@ if(RadiumEngine !== undefined)
 		this.canvas = canvas
 		this.context = canvas.getContext("2d");
 		
+		$(this.canvas).bind('mouseenter', {'self': this}, function(event){
+			self.mouse_over = true;
+		});
+		
+		$(this.canvas).bind('mouseleave', {'self': this}, function(event){
+			self.mouse_over = false;
+		});
+		
 		$(this.canvas).bind('mousemove', {'self': this}, function(event){
 			self = event.data.self;
 			
