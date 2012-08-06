@@ -6,6 +6,7 @@ if(RadiumEngine !== undefined)
 		this.tile_height = 64;
 		this.width = 6;
 		this.height = 6;
+		this.mouse_tile = undefined;
 		this.mouse_tile_x = 0;
 		this.mouse_tile_y = 0;
 		this.mouse_over = false;
@@ -14,7 +15,7 @@ if(RadiumEngine !== undefined)
 		this.canvas = canvas
 		this.context = canvas.getContext("2d");
 		
-		$(this.canvas).bind('click', {'self': this}, function(event){
+		$(this.canvas).bind('mousemove', {'self': this}, function(event){
 			self = event.data.self;
 			
 			var rect = self.canvas.getBoundingClientRect();
@@ -23,7 +24,8 @@ if(RadiumEngine !== undefined)
 			var mouse_y = event.clientY - rect.left - root.scrollLeft;
 			var coords = event.data.self.TileFromPosition(mouse_x, mouse_y);
 			
-			alert("You clicked the tile at map coordinate " + coords.x + "," + coords.y + "!");
+			this.mouse_tile = coords;
+			/*$('#status').html(coords.x + " , " + coords.y);*/
 		});
 		
 		var Configure = this.Configure = function(tile_width, tile_height)
