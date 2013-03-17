@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+	<head>
+		<style>
+			body {
+				background-color: #F5F5F5;
+				font-family: sans-serif;
+				margin-right: 40px;
+			}
+
+			h2, h3, h4, h5, h6, h7
+			{
+				margin-top: 16px;
+				margin-bottom: 4px;
+			}
+
+			.children { padding-left: 40px; }
+
+			.definition
+			{
+				font-weight: bold;
+				margin-bottom: 32px;
+			}
+
+			.example 
+			{ 
+				padding: 5px 6px;
+				font-weight: bold;
+				font-size: 15px;
+				background-color: #E6E6E6; 
+				margin-top: 11px;
+			}
+
+			.example > .children
+			{
+				padding-top: 11px;
+				padding-left: 10px;
+			}
+
+			.example > .children > h7
+			{
+				font-size: 13px;
+			}
+
+			h7
+			{
+				font-size: 14px;
+				font-weight: bold;
+				margin-bottom: 2px;
+			}
+
+			pre
+			{
+				margin-top: 0px;
+				padding: 6px 7px;
+				background-color: #D9D9D9;
+				font-weight: normal;
+				font-size: 13px;
+			}
+
+			dl
+			{
+				margin: 5px 0px;
+			}
+
+			dt
+			{
+				font-weight: bold;
+			}
+
+			dd
+			{
+				font-size: 14px;
+				font-weight: normal;
+				margin-left: 8px;
+			}
+			
+			dd > .children
+			{
+				font-size: 95%;
+			}
+			
+			dd > .children > dl > dd
+			{
+				margin-left: 13px;
+			}
+
+			.exclamation
+			{
+				padding: 7px 8px;
+				margin: 11px 0px;
+				background-color: #FFE9AA;
+				border: 1px solid yellow;
+				font-size: 15px;
+				font-weight: normal;
+			}
+
+			.text
+			{
+				font-size: 15px;
+				font-weight: normal;
+				margin-bottom: 14px;
+				margin-top: 10px;
+			}
+
+			.toc
+			{
+				border: 1px solid gray;
+				background-color: #E6E6E6;
+				padding: 8px 9px;
+				font-size: 15px;
+				margin-bottom: 12px;
+			}
+
+			.toc h2
+			{
+				margin: 0px 0px 3px 0px;
+				font-size: 19px;
+			}
+
+			.toc ul
+			{
+				margin-top: 0px;
+				margin-bottom: 0px;
+				padding-left: 25px;
+			}
+
+			.toc li
+			{
+				margin-bottom: 2px;
+			}
+
+			.toc .alternatives
+			{
+				font-size: 12px;
+			}
+
+			.toc a
+			{
+				color: #292722;
+			}
+
+			.toc a:hover
+			{
+				color: black;
+			}
+			
+			.fixed
+			{
+				font-family: monospace;
+				background-color: white;
+				padding: 1px 4px;
+				border: 1px solid silver;
+				border-radius: 4px;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="children"><h1>Engine.Math</h1><div class="text">The Math library provides several functions to do mathematical operations or calculations. Most of these functions are simply aliases of the functions built into JavaScript.</div><div class="toc"><h2>Table of contents</h2><ul><li><a href="#Engine_Math_Absolutex">Engine.Math.Absolute(x)</a> Returns the absolute value of <span class="fixed">x</span>. <span class="alternatives">(also: Engine.Math.Abs(x))</span></li><li><a href="#Engine_Random_Sumitemitemitem">Engine.Random.Sum(item [, item [, item ...]])</a> Returns the sum of all supplied numbers. <span class="alternatives">(also: Engine.Random.Sum(itemarray))</span></li><li><a href="#Engine_Math_Roundx">Engine.Math.Round(x)</a> Rounds <span class="fixed">x</span> to the nearest integer. </li><li><a href="#Engine_Math_Ceilingx">Engine.Math.Ceiling(x)</a> Rounds up <span class="fixed">x</span>. <span class="alternatives">(also: Engine.Math.Ceil(x))</span></li><li><a href="#Engine_Math_Floorx">Engine.Math.Floor(x)</a> Rounds down <span class="fixed">x</span>. </li><li><a href="#Engine_Math_Tangentx">Engine.Math.Tangent(x)</a> Returns the tangent of angle <span class="fixed">x</span>. <span class="alternatives">(also: Engine.Math.Tan(x))</span></li><li><a href="#Engine_Math_Cosinex">Engine.Math.Cosine(x)</a> Returns the cosine of <span class="fixed">x</span>. <span class="alternatives">(also: Engine.Math.Cos(x))</span></li><li><a href="#Engine_Math_Sinex">Engine.Math.Sine(x)</a> Returns the sine of <span class="fixed">x</span>. <span class="alternatives">(also: Engine.Math.Sin(x))</span></li></ul></div><div class="definition"><a name="Engine_Math_Absolutex">Engine.Math.Absolute(<em>x</em>)<br>Engine.Math.Abs(<em>x</em>) <div class="children"><div class="text">Returns the absolute value of <span class="fixed">x</span>.</div><div class="text"><em>This is an alias of the standard Math.abs function in JavaScript.</em></div><dl><dt>x</dt><dd>The number.<div class="children"></div></dd></dl><div class="example">Example: Get the absolute value of a positive number <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Absolute(16);</pre><h7>Output:</h7><pre class="output">16</pre></div></div><div class="example">Example: Get the absolute value of a negative number <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Absolute(-23);</pre><h7>Output:</h7><pre class="output">23</pre></div></div></div></a></div><div class="definition"><a name="Engine_Random_Sumitemitemitem">Engine.Random.Sum(<em>item</em> [, <em>item</em> [, <em>item</em> ...]])<br>Engine.Random.Sum(<em>itemarray</em>) <div class="children"><div class="text">Returns the sum of all supplied numbers.</div><dl><dt>item</dt><dd>An individual number. itemarray:: An array of numbers.<div class="children"></div></dd></dl><div class="example">Example: Sum several numbers using individual arguments <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Sum(42, 6, 17, 2, 7);</pre><h7>Output:</h7><pre class="output">74</pre></div></div><div class="example">Example: Sum several numbers using an array <div class="children"><h7>Code:</h7><pre class="code">var numbers = [42, 6, 17, 2, 7];
+Engine.Math.Sum(numbers);</pre><h7>Output:</h7><pre class="output">74</pre></div></div></div></a></div><div class="definition"><a name="Engine_Math_Roundx">Engine.Math.Round(<em>x</em>) <div class="children"><div class="text">Rounds <span class="fixed">x</span> to the nearest integer.</div><div class="text"><em>This is an alias of the standard Math.round function in JavaScript.</em></div><dl><dt>x</dt><dd>The value to round.<div class="children"></div></dd></dl><div class="example">Example: Rounding a number in the upper half <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Ceiling(82.62);</pre><h7>Output:</h7><pre class="output">83</pre></div></div><div class="example">Example: Rounding a number in the lower half <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Ceiling(82.13);</pre><h7>Output:</h7><pre class="output">82</pre></div></div></div></a></div><div class="definition"><a name="Engine_Math_Ceilingx">Engine.Math.Ceiling(<em>x</em>)<br>Engine.Math.Ceil(<em>x</em>) <div class="children"><div class="text">Rounds up <span class="fixed">x</span>.</div><div class="text"><em>This is an alias of the standard Math.ceil function in JavaScript.</em></div><dl><dt>x</dt><dd>The value to round up.<div class="children"></div></dd></dl><div class="example">Example: Rounding up a number <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Ceiling(614.2162);</pre><h7>Output:</h7><pre class="output">615</pre></div></div></div></a></div><div class="definition"><a name="Engine_Math_Floorx">Engine.Math.Floor(<em>x</em>) <div class="children"><div class="text">Rounds down <span class="fixed">x</span>.</div><div class="text"><em>This is an alias of the standard Math.floor function in JavaScript.</em></div><dl><dt>x</dt><dd>The value to round down.<div class="children"></div></dd></dl><div class="example">Example: Rounding down a number <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Floor(7.612);</pre><h7>Output:</h7><pre class="output">7</pre></div></div></div></a></div><div class="definition"><a name="Engine_Math_Tangentx">Engine.Math.Tangent(<em>x</em>)<br>Engine.Math.Tan(<em>x</em>) <div class="children"><div class="text">Returns the tangent of angle <span class="fixed">x</span>.</div><div class="text"><em>This is an alias of the standard Math.tan function in JavaScript.</em></div><dl><dt>x</dt><dd>The value.<div class="children"></div></dd></dl><div class="example">Example: Calculating the tangent <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Tangent(84.15);</pre><h7>Output:</h7><pre class="output">-0.7971515163204654</pre></div></div></div></a></div><div class="definition"><a name="Engine_Math_Cosinex">Engine.Math.Cosine(<em>x</em>)<br>Engine.Math.Cos(<em>x</em>) <div class="children"><div class="text">Returns the cosine of <span class="fixed">x</span>.</div><div class="text"><em>This is an alias of the standard Math.cos function in JavaScript.</em></div><dl><dt>x</dt><dd>The value (in radians).<div class="children"></div></dd></dl><div class="example">Example: Calculating the cosine <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Cosine(162.54);</pre><h7>Output:</h7><pre class="output">0.6801581420388815</pre></div></div></div></a></div><div class="definition"><a name="Engine_Math_Sinex">Engine.Math.Sine(<em>x</em>)<br>Engine.Math.Sin(<em>x</em>) <div class="children"><div class="text">Returns the sine of <span class="fixed">x</span>.</div><div class="text"><em>This is an alias of the standard Math.sin function in JavaScript.</em></div><dl><dt>x</dt><dd>The value (in radians).<div class="children"></div></dd></dl><div class="example">Example: Calculating the sine <div class="children"><h7>Code:</h7><pre class="code">Engine.Math.Sine(62.4);</pre><h7>Output:</h7><pre class="output">-0.41855446451842543</pre></div></div></div></a></div></div>
+	</body>
+</html>

@@ -1,0 +1,123 @@
+# Engine.Random
+
+The Random library provides several functions to pick random numbers or items.
+
+{TOC}
+
+^ Engine.Random.Number(**min**, **max**, **precision**)
+
+	Selects a random number between `min` and `max`, excluding `max` itself.
+	
+	
+	min::
+		**Optional:** The minimum number. **Defaults to 0.**
+		
+	max::
+		**Optional:** The maximum number (itself excluded). **Defaults to 1.**
+		
+	precision::
+		**Optional:** The precision; this is what the result will be rounded to. **Defaults to 0.00000001.**
+		
+		
+	@ Get a whole number from 0 to 9
+	
+		$ Engine.Random.Number(0, 10, 1);
+		
+		> 7
+	
+	
+	@ Get a one-tenth-precision number from 0 to 9.9
+	
+		$ Engine.Random.Number(0, 10, 0.1);
+		
+		> 3.7
+	
+	
+	@ Get a one-fifth-precision number from 5 to 9.8:
+	
+		$ Engine.Random.Number(5, 10, 0.2);
+		
+		> 6.4
+
+
+^ Engine.Random.Choose(**item** [, **item** [, **item** ...]])
+  Engine.Random.Choose(**itemarray**)
+
+	Selects a random item from the supplied items.
+	
+	
+	item::
+		An item to choose from.
+		
+	itemarray::
+		An array of items to choose from.
+		
+	
+	@ Select a random color from a list using multiple arguments
+	
+		$ Engine.Random.Choose("blue", "green", "red", "yellow");
+		
+		> "green"
+	
+	
+	@ Select a random day from a list using an array
+	
+		$ var days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+		Engine.Random.Choose(days);
+		
+		> "Thursday"
+		
+		
+^ Engine.Random.Pick(**amount**, **item** [, **item** [, **item** ...]])
+  Engine.Random.Pick(**amount**, **itemarray**)
+
+	Selects `amount` unique random items from the supplied items. Each item can only appear in the result once.
+	
+	! The `amount` argument must always be equal to or higher than the amount of supplied items!
+	
+	
+	amount::
+		The amount of items to select.
+	
+	item::
+		An item to choose from.
+		
+	itemarray::
+		An array of items to choose from.
+	
+	
+	@ Select three random colors from a list using multiple arguments
+	
+		$ Engine.Random.Pick(3, "red", "green", "blue", "yellow", "purple", "brown", "black", "white", "orange");
+		
+		> ["blue", "orange", "red"]
+	
+	
+	@ Select two vegetables from a list using an array
+		
+		$ var vegetables = ["celery", "potato", "tomato", "coleslaw", "onion"];
+		Engine.Random.Pick(2, vegetables);
+		
+		> ["tomato", "onion"]
+
+^ Engine.Random.String(**length** [, **alphabet**])
+
+	Generates a random string with the specified `length`, and optionally a custom alphabet.
+	
+	length::
+		The length of the string that has to be generated.
+		
+	alphabet::
+		**Optional:** The alphabet (set of characters) to choose from. **Defaults to a-z, A-Z, 0-9.**
+		
+	@ Generate a random string with the default alphabet
+	
+		$ Engine.Random.String(14);
+		
+		> "NCm2Y7lEleCTa5"
+		
+	@ Generate a random string with a custom alphabet
+	
+		$ Engine.Random.String(10, "abcde");
+		
+		> "baeddebaca"
