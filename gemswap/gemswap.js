@@ -4,6 +4,7 @@
     var engine, manager;
     manager = new ResourceManager("gemswap/assets");
     engine = new Engine(manager);
+    window.debug_engine = engine;
 
     /*
     	 * Configure pre-loading assets
@@ -11,7 +12,7 @@
     		"images/loading_screen.png"
     	], true)
      */
-    manager.addImages(["images/diamond.png", "images/diamond_inverted.png", "images/diamond_shimmer.png"]);
+    manager.addImages(["images/diamond.png", "images/diamond_inverted.png", "images/diamond_shimmer.png", "images/yellow.png", "images/yellow_inverted.png", "images/yellow_shimmer.png"]);
 
     /*
     	manager.addSounds([
@@ -21,23 +22,28 @@
      */
     manager.prepare();
     return manager.preload(null, function() {
-      var diamond, scene;
+      var diamond, scene, x, y, _i, _j;
       engine.addCanvas($("#gamecanvas"));
       scene = engine.createScene("main");
       engine.createSprite("diamond", "images/diamond.png");
       engine.createSprite("diamond_inverted", "images/diamond_inverted.png");
       engine.createSprite("diamond_shimmer", "images/diamond_shimmer.png");
+      engine.createSprite("yellow", "images/yellow.png");
+      engine.createSprite("yellow_inverted", "images/yellow_inverted.png");
+      engine.createSprite("yellow_shimmer", "images/yellow_shimmer.png");
       diamond = engine.createObject("diamond");
       diamond.sprite = engine.getSprite("diamond");
+      diamond.draw_sprite = false;
       diamond.onCreate = function() {
         this.fade_step = 0.045;
         this.fade_current_step = this.fade_step;
         this.fade_value = 0;
         this.fade_decay_current = 9999;
         this.fade_decay_max = 8;
-        this.shimmer_step = 0.006;
+        this.shimmer_step = 0.006 * Math.random();
         this.shimmer_current_step = this.shimmer_step;
-        return this.shimmer_value = 0;
+        this.shimmer_value = 0;
+        return this.gem_type = Math.random() > 0.5 ? "diamond" : "yellow";
       };
       diamond.onStep = function() {
         var max;
@@ -66,18 +72,22 @@
         return true;
       };
       diamond.onDraw = function() {
-        this.engine.getSprite("diamond_inverted").draw(this.x, this.y, {
+        this.engine.getSprite(this.gem_type).draw(this.x, this.y);
+        this.engine.getSprite("" + this.gem_type + "_inverted").draw(this.x, this.y, {
           alpha: this.fade_value
         });
-        return this.engine.getSprite("diamond_shimmer").draw(this.x - 14, this.y - 14, {
+        return this.engine.getSprite("" + this.gem_type + "_shimmer").draw(this.x - 14, this.y - 14, {
           alpha: this.shimmer_value
         });
       };
       diamond.onMouseOver = function() {
-        console.log("mouseover");
         return this.fade_decay_current = 1;
       };
-      scene.createInstance(diamond, 20, 20);
+      for (x = _i = 0; _i <= 728; x = _i += 72) {
+        for (y = _j = 0; _j <= 550; y = _j += 72) {
+          scene.createInstance(diamond, x, y);
+        }
+      }
       return engine.start();
     });
   });

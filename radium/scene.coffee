@@ -8,15 +8,15 @@ class Scene
 		@width = 800
 		@height = 600
 		@last_width = 800
-		@last_height
+		@last_height = 600
 		
 	addTargetSurface: (surface) =>
 		@surfaces.push(surface)
 		@engine.updateCanvasSize(surface, @width, @height)
 		$(surface).on("mousemove.radium", (event) =>
 			canvas_pos = surface.getBoundingClientRect()
-			@mouse_x = Math.floor(event.clientX - canvas_pos.left)
-			@mouse_y = Math.floor(event.clientY - canvas_pos.top)
+			@mouse_x = (event.clientX - canvas_pos.left) | 0
+			@mouse_y = (event.clientY - canvas_pos.top) | 0
 			$("#debug").html("#{@mouse_x} / #{@mouse_y}")
 			@checkMouseCollisions()
 		)
@@ -51,7 +51,7 @@ class Scene
 		
 	checkMouseCollisions: =>
 		for id, instance of @instances
-			instance.callEvent("mouseover") if instance.checkPointCollision(@mouseX, @mouseY)
+			instance.callEvent("mouseover") if instance.checkPointCollision(@mouse_x, @mouse_y)
 		
 	createInstance: (object, x = 0, y = 0) =>
 		id = @last_instance_id += 1

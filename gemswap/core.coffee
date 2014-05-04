@@ -1,7 +1,7 @@
 $(->
 	manager = new ResourceManager("gemswap/assets")
 	engine = new Engine(manager)
-
+	window.debug_engine = engine
 	###
 	# Configure pre-loading assets
 	manager.addImages([
@@ -14,6 +14,9 @@ $(->
 		"images/diamond.png"
 		"images/diamond_inverted.png"
 		"images/diamond_shimmer.png"
+		"images/yellow.png"
+		"images/yellow_inverted.png"
+		"images/yellow_shimmer.png"
 	])
 
 	###
@@ -33,8 +36,13 @@ $(->
 		engine.createSprite("diamond_inverted", "images/diamond_inverted.png")
 		engine.createSprite("diamond_shimmer", "images/diamond_shimmer.png")
 
+		engine.createSprite("yellow", "images/yellow.png")
+		engine.createSprite("yellow_inverted", "images/yellow_inverted.png")
+		engine.createSprite("yellow_shimmer", "images/yellow_shimmer.png")
+
 		diamond = engine.createObject("diamond")
 		diamond.sprite = engine.getSprite("diamond")
+		diamond.draw_sprite = false
 		
 		diamond.onCreate = ->
 			@fade_step = 0.045
@@ -43,9 +51,11 @@ $(->
 			@fade_decay_current = 9999 # Disable by default
 			@fade_decay_max = 8
 			
-			@shimmer_step = 0.006
+			@shimmer_step = 0.006 * Math.random()
 			@shimmer_current_step = @shimmer_step
 			@shimmer_value = 0
+			
+			@gem_type = if Math.random() > 0.5 then "diamond" else "yellow"
 		
 		diamond.onStep = ->
 			if @fade_decay_current < Math.pow(2, @fade_decay_max)
@@ -75,19 +85,22 @@ $(->
 			return true
 		
 		diamond.onDraw = ->
-			@engine.getSprite("diamond_inverted").draw(@x, @y, {
+			@engine.getSprite(@gem_type).draw(@x, @y)
+			
+			@engine.getSprite("#{@gem_type}_inverted").draw(@x, @y, {
 				alpha: @fade_value
 			})
 			
-			@engine.getSprite("diamond_shimmer").draw(@x - 14, @y - 14, {
+			@engine.getSprite("#{@gem_type}_shimmer").draw(@x - 14, @y - 14, {
 				alpha: @shimmer_value
 			})
 		
 		diamond.onMouseOver = ->
-			console.log("mouseover")
 			@fade_decay_current = 1
 		
-		scene.createInstance(diamond, 20, 20)
+		for x in [0 .. 728] by 72
+			for y in [0 .. 550] by 72
+				scene.createInstance(diamond, x, y)
 
 		engine.start()
 	)

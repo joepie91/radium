@@ -409,29 +409,27 @@
     function Object(engine, name) {
       this.engine = engine;
       this.name = name;
-      this.checkPointCollision = __bind(this.checkPointCollision, this);
-      this.getBoundingBox = __bind(this.getBoundingBox, this);
-      this.drawSprite = __bind(this.drawSprite, this);
-      this.drawSelf = __bind(this.drawSelf, this);
-      this.callEvent = __bind(this.callEvent, this);
       this.sprite = null;
       this.x = 0;
       this.y = 0;
     }
 
     Object.prototype.callEvent = function(name, data) {
-      var _ref;
+      var event_map, _ref, _ref1;
       if (data == null) {
         data = {};
       }
+      event_map = {
+        mouseover: this.onMouseOver,
+        create: this.onCreate,
+        step: this.onStep
+      };
       switch (name) {
-        case "create":
-          return typeof this.onCreate === "function" ? this.onCreate(data) : void 0;
-        case "step":
-          return typeof this.onStep === "function" ? this.onStep(data) : void 0;
         case "draw":
           this.drawSelf((_ref = data.surface) != null ? _ref : "");
           return typeof this.onDraw === "function" ? this.onDraw(data) : void 0;
+        default:
+          return (_ref1 = event_map[name]) != null ? _ref1.bind(this)(data) : void 0;
       }
     };
 
@@ -633,7 +631,7 @@
       this.width = 800;
       this.height = 600;
       this.last_width = 800;
-      this.last_height;
+      this.last_height = 600;
     }
 
     Scene.prototype.addTargetSurface = function(surface) {
@@ -643,8 +641,8 @@
         return function(event) {
           var canvas_pos;
           canvas_pos = surface.getBoundingClientRect();
-          _this.mouse_x = Math.floor(event.clientX - canvas_pos.left);
-          _this.mouse_y = Math.floor(event.clientY - canvas_pos.top);
+          _this.mouse_x = (event.clientX - canvas_pos.left) | 0;
+          _this.mouse_y = (event.clientY - canvas_pos.top) | 0;
           $("#debug").html("" + _this.mouse_x + " / " + _this.mouse_y);
           return _this.checkMouseCollisions();
         };
@@ -717,7 +715,7 @@
       _results = [];
       for (id in _ref) {
         instance = _ref[id];
-        if (instance.checkPointCollision(this.mouseX, this.mouseY)) {
+        if (instance.checkPointCollision(this.mouse_x, this.mouse_y)) {
           _results.push(instance.callEvent("mouseover"));
         } else {
           _results.push(void 0);
