@@ -5,12 +5,14 @@
 class Object
 	constructor: (@engine, @name) ->
 		@sprite = null
+		@instances = []
 		@x = 0
 		@y = 0
 		
 	callEvent: (name, data = {}) ->
 		event_map =
 			mouseover: @onMouseOver
+			mouseout: @onMouseOut
 			create: @onCreate
 			step: @onStep
 		
@@ -35,6 +37,9 @@ class Object
 			y1: @y
 			y2: @y + image_size?.height
 		}
+	
+	getInstances: ->
+		return @instances
 	
 	checkPointCollision: (x, y) ->
 		# TODO: Precision collision matching!

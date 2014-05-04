@@ -12,7 +12,7 @@
     		"images/loading_screen.png"
     	], true)
      */
-    manager.addImages(["images/diamond.png", "images/diamond_inverted.png", "images/diamond_shimmer.png", "images/yellow.png", "images/yellow_inverted.png", "images/yellow_shimmer.png"]);
+    manager.addImages(["images/cursor.png", "images/diamond.png", "images/diamond_inverted.png", "images/diamond_shimmer.png", "images/yellow.png", "images/yellow_inverted.png", "images/yellow_shimmer.png", "images/blue.png", "images/blue_inverted.png", "images/blue_shimmer.png"]);
 
     /*
     	manager.addSounds([
@@ -22,15 +22,21 @@
      */
     manager.prepare();
     return manager.preload(null, function() {
-      var diamond, scene, x, y, _i, _j;
+      var cursor, diamond, scene, x, y, _i, _j;
       engine.addCanvas($("#gamecanvas"));
       scene = engine.createScene("main");
+      engine.createSprite("cursor", "images/cursor.png");
       engine.createSprite("diamond", "images/diamond.png");
       engine.createSprite("diamond_inverted", "images/diamond_inverted.png");
       engine.createSprite("diamond_shimmer", "images/diamond_shimmer.png");
       engine.createSprite("yellow", "images/yellow.png");
       engine.createSprite("yellow_inverted", "images/yellow_inverted.png");
       engine.createSprite("yellow_shimmer", "images/yellow_shimmer.png");
+      engine.createSprite("blue", "images/blue.png");
+      engine.createSprite("blue_inverted", "images/blue_inverted.png");
+      engine.createSprite("blue_shimmer", "images/blue_shimmer.png");
+      cursor = engine.createObject("cursor");
+      cursor.sprite = engine.getSprite("cursor");
       diamond = engine.createObject("diamond");
       diamond.sprite = engine.getSprite("diamond");
       diamond.draw_sprite = false;
@@ -40,10 +46,10 @@
         this.fade_value = 0;
         this.fade_decay_current = 9999;
         this.fade_decay_max = 8;
-        this.shimmer_step = 0.006 * Math.random();
+        this.shimmer_step = this.engine.random.number(0.003, 0.007, 0.0005) * Math.random();
         this.shimmer_current_step = this.shimmer_step;
         this.shimmer_value = 0;
-        return this.gem_type = Math.random() > 0.5 ? "diamond" : "yellow";
+        return this.gem_type = this.engine.random.pick("diamond", "yellow", "blue");
       };
       diamond.onStep = function() {
         var max;
@@ -81,13 +87,20 @@
         });
       };
       diamond.onMouseOver = function() {
-        return this.fade_decay_current = 1;
+        this.fade_decay_current = 1;
+        cursor = this.engine.getObject("cursor").getInstances()[0];
+        cursor.x = this.x - 9;
+        return cursor.y = this.y - 9;
       };
-      for (x = _i = 0; _i <= 728; x = _i += 72) {
-        for (y = _j = 0; _j <= 550; y = _j += 72) {
+      for (x = _i = 10; _i <= 728; x = _i += 80) {
+        for (y = _j = 10; _j <= 550; y = _j += 80) {
           scene.createInstance(diamond, x, y);
         }
       }
+      cursor.onStep = function() {
+        return $("#debug").html("Mouse coords: " + this.scene.mouse_x + " / " + this.scene.mouse_y + "<br>Frameskip: " + this.engine.frameskip);
+      };
+      scene.createInstance(cursor, 0, 0);
       return engine.start();
     });
   });

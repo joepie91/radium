@@ -375,7 +375,7 @@
       return function(min, max, precision) {
         var base_number, rounding_factor, space;
         base_number = Math.random();
-        space = Math.abs(ceiling - floor);
+        space = Math.abs(max - min);
         rounding_factor = 1 / (precision != null ? precision : 0.00000001);
         return Math.floor((min + (base_number * space)) * rounding_factor) / rounding_factor;
       };
@@ -410,6 +410,7 @@
       this.engine = engine;
       this.name = name;
       this.sprite = null;
+      this.instances = [];
       this.x = 0;
       this.y = 0;
     }
@@ -421,6 +422,7 @@
       }
       event_map = {
         mouseover: this.onMouseOver,
+        mouseout: this.onMouseOut,
         create: this.onCreate,
         step: this.onStep
       };
@@ -456,6 +458,10 @@
         y1: this.y,
         y2: this.y + (image_size != null ? image_size.height : void 0)
       };
+    };
+
+    Object.prototype.getInstances = function() {
+      return this.instances;
     };
 
     Object.prototype.checkPointCollision = function(x, y) {
@@ -643,7 +649,6 @@
           canvas_pos = surface.getBoundingClientRect();
           _this.mouse_x = (event.clientX - canvas_pos.left) | 0;
           _this.mouse_y = (event.clientY - canvas_pos.top) | 0;
-          $("#debug").html("" + _this.mouse_x + " / " + _this.mouse_y);
           return _this.checkMouseCollisions();
         };
       })(this));
@@ -710,13 +715,18 @@
     };
 
     Scene.prototype.checkMouseCollisions = function() {
-      var id, instance, _ref, _results;
+      var collision, id, instance, _ref, _results;
       _ref = this.instances;
       _results = [];
       for (id in _ref) {
         instance = _ref[id];
-        if (instance.checkPointCollision(this.mouse_x, this.mouse_y)) {
-          _results.push(instance.callEvent("mouseover"));
+        collision = instance.checkPointCollision(this.mouse_x, this.mouse_y);
+        if (collision && !instance._moused_over) {
+          instance.callEvent("mouseover");
+          _results.push(instance._moused_over = true);
+        } else if (!collision && instance._moused_over) {
+          instance.callEvent("mouseout");
+          _results.push(instance._moused_over = false);
         } else {
           _results.push(void 0);
         }
@@ -725,7 +735,7 @@
     };
 
     Scene.prototype.createInstance = function(object, x, y) {
-      var id, instance;
+      var id, instance, real_object;
       if (x == null) {
         x = 0;
       }
@@ -733,12 +743,14 @@
         y = 0;
       }
       id = this.last_instance_id += 1;
-      instance = window.Object.create(this.engine.getObject(object));
+      real_object = this.engine.getObject(object);
+      instance = window.Object.create(real_object);
       instance.x = x;
       instance.y = y;
       instance.id = id;
       instance.scene = this;
       this.instances[id] = instance;
+      real_object.instances.push(instance);
       instance.callEvent("create");
       return instance;
     };

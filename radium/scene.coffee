@@ -17,7 +17,6 @@ class Scene
 			canvas_pos = surface.getBoundingClientRect()
 			@mouse_x = (event.clientX - canvas_pos.left) | 0
 			@mouse_y = (event.clientY - canvas_pos.top) | 0
-			$("#debug").html("#{@mouse_x} / #{@mouse_y}")
 			@checkMouseCollisions()
 		)
 		@checkActive()
@@ -51,17 +50,26 @@ class Scene
 		
 	checkMouseCollisions: =>
 		for id, instance of @instances
-			instance.callEvent("mouseover") if instance.checkPointCollision(@mouse_x, @mouse_y)
+			collision = instance.checkPointCollision(@mouse_x, @mouse_y)
+			
+			if collision and not instance._moused_over
+				instance.callEvent("mouseover")
+				instance._moused_over = true
+			else if not collision and instance._moused_over
+				instance.callEvent("mouseout")
+				instance._moused_over = false
 		
 	createInstance: (object, x = 0, y = 0) =>
 		id = @last_instance_id += 1
+		real_object = @engine.getObject(object)
 		
-		instance = window.Object.create(@engine.getObject(object))
+		instance = window.Object.create(real_object)
 		instance.x = x
 		instance.y = y
 		instance.id = id
 		instance.scene = this
 		@instances[id] = instance
+		real_object.instances.push(instance)
 		
 		instance.callEvent("create")
 		

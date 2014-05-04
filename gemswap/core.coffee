@@ -11,12 +11,16 @@ $(->
 
 	# Configure game assets
 	manager.addImages([
+		"images/cursor.png"
 		"images/diamond.png"
 		"images/diamond_inverted.png"
 		"images/diamond_shimmer.png"
 		"images/yellow.png"
 		"images/yellow_inverted.png"
 		"images/yellow_shimmer.png"
+		"images/blue.png"
+		"images/blue_inverted.png"
+		"images/blue_shimmer.png"
 	])
 
 	###
@@ -32,6 +36,8 @@ $(->
 
 		scene = engine.createScene("main")
 
+		engine.createSprite("cursor", "images/cursor.png")
+		
 		engine.createSprite("diamond", "images/diamond.png")
 		engine.createSprite("diamond_inverted", "images/diamond_inverted.png")
 		engine.createSprite("diamond_shimmer", "images/diamond_shimmer.png")
@@ -39,7 +45,14 @@ $(->
 		engine.createSprite("yellow", "images/yellow.png")
 		engine.createSprite("yellow_inverted", "images/yellow_inverted.png")
 		engine.createSprite("yellow_shimmer", "images/yellow_shimmer.png")
+		
+		engine.createSprite("blue", "images/blue.png")
+		engine.createSprite("blue_inverted", "images/blue_inverted.png")
+		engine.createSprite("blue_shimmer", "images/blue_shimmer.png")
 
+		cursor = engine.createObject("cursor")
+		cursor.sprite = engine.getSprite("cursor")
+		
 		diamond = engine.createObject("diamond")
 		diamond.sprite = engine.getSprite("diamond")
 		diamond.draw_sprite = false
@@ -51,11 +64,11 @@ $(->
 			@fade_decay_current = 9999 # Disable by default
 			@fade_decay_max = 8
 			
-			@shimmer_step = 0.006 * Math.random()
+			@shimmer_step = @engine.random.number(0.003, 0.007, 0.0005) * Math.random()
 			@shimmer_current_step = @shimmer_step
 			@shimmer_value = 0
 			
-			@gem_type = if Math.random() > 0.5 then "diamond" else "yellow"
+			@gem_type = @engine.random.pick("diamond", "yellow", "blue")
 		
 		diamond.onStep = ->
 			if @fade_decay_current < Math.pow(2, @fade_decay_max)
@@ -97,10 +110,19 @@ $(->
 		
 		diamond.onMouseOver = ->
 			@fade_decay_current = 1
+			
+			cursor = @engine.getObject("cursor").getInstances()[0]
+			cursor.x = @x - 9
+			cursor.y = @y - 9
 		
-		for x in [0 .. 728] by 72
-			for y in [0 .. 550] by 72
+		for x in [10 .. 728] by 80
+			for y in [10 .. 550] by 80
 				scene.createInstance(diamond, x, y)
+				
+		cursor.onStep = ->
+			$("#debug").html("Mouse coords: #{@scene.mouse_x} / #{@scene.mouse_y}<br>Frameskip: #{@engine.frameskip}")
+				
+		scene.createInstance(cursor, 0, 0)
 
 		engine.start()
 	)
