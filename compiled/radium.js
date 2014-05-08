@@ -23,7 +23,6 @@
       this.setInitialScene = __bind(this.setInitialScene, this);
       this.skipTimers = __bind(this.skipTimers, this);
       this.updateTimers = __bind(this.updateTimers, this);
-      this.updateEasings = __bind(this.updateEasings, this);
       this.iteration = __bind(this.iteration, this);
       this.loop = __bind(this.loop, this);
       this.start = __bind(this.start, this);
@@ -42,7 +41,6 @@
       this.sounds = {};
       this.sprites = {};
       this.tilesets = {};
-      this.easings = [];
       this.named_timers = {};
       this.unnamed_timers = [];
     }
@@ -116,28 +114,6 @@
         belated_timeout = overtime % frame_interval;
         return setTimeout(this.iteration, belated_timeout);
       }
-    };
-
-    Engine.prototype.updateEasings = function() {
-      var easing, _i, _len, _ref;
-      _ref = this.easings;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        easing = _ref[_i];
-        if (this.current_frame >= (easing.start_frame + easing.duration)) {
-          if (easing.infinite) {
-            easing.start_frame = this.current_frame;
-            easing.updateValue(this.current_frame);
-          } else {
-            easing.finished = true;
-            easing.value = easing.end;
-          }
-        } else {
-          easing.updateValue(this.current_frame);
-        }
-      }
-      return this.easings = this.easings.filter(function(obj) {
-        return !obj.finished;
-      });
     };
 
     Engine.prototype.updateTimers = function() {
@@ -270,211 +246,6 @@
 
   })();
 
-  Engine.prototype.draw = {
-    _startPath: (function(_this) {
-      return function(surface, options) {
-        var _ref;
-        surface = _this.getSurface(surface);
-        if ((_ref = !options._is_text) != null ? _ref : false) {
-          surface.beginPath();
-        }
-        return surface;
-      };
-    })(this),
-    _finishPath: (function(_this) {
-      return function(surface, options) {
-        var _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
-        if ((_ref = options.stroke) != null ? _ref : true) {
-          surface.lineWidth = (_ref1 = (_ref2 = (_ref3 = (_ref4 = (_ref5 = options.lineWidth) != null ? _ref5.value : void 0) != null ? _ref4 : options.lineWidth) != null ? _ref3 : (_ref6 = options.pen) != null ? (_ref7 = _ref6.lineWidth) != null ? _ref7.value : void 0 : void 0) != null ? _ref2 : (_ref8 = options.pen) != null ? _ref8.lineWidth : void 0) != null ? _ref1 : 1;
-          surface.strokeStyle = (_ref9 = (_ref10 = options.lineColor) != null ? _ref10 : (_ref11 = options.pen) != null ? _ref11.lineColor : void 0) != null ? _ref9 : "black";
-          if ((_ref12 = options._is_text) != null ? _ref12 : false) {
-            surface.strokeText(options.text, options.x, options.y);
-          } else {
-            surface.stroke();
-          }
-        }
-        if ((_ref13 = options.fill) != null ? _ref13 : false) {
-          surface.fillStyle = (_ref14 = (_ref15 = options.fillColor) != null ? _ref15 : (_ref16 = options.pen) != null ? _ref16.fillColor : void 0) != null ? _ref14 : "white";
-          if ((_ref17 = options._is_text) != null ? _ref17 : false) {
-            return surface.fillText(options.text, options.x, options.y);
-          } else {
-            return surface.fill();
-          }
-        }
-      };
-    })(this),
-    _getTextWidth: (function(_this) {
-      return function(surface, text, options) {
-        var width;
-        _this._applyTextContext(surface, options);
-        width = surface.measureText(text).width;
-        surface.restore();
-        return width;
-      };
-    })(this),
-    _applyTextContext: (function(_this) {
-      return function(surface, options) {
-        var font_family, font_size, font_style, font_weight, scale, _ref, _ref1, _ref10, _ref11, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
-        font_family = (_ref = options.font) != null ? _ref : "sans-serif";
-        font_size = (_ref1 = (_ref2 = (_ref3 = options.size) != null ? _ref3.value : void 0) != null ? _ref2 : options.size) != null ? _ref1 : 16;
-        font_weight = (_ref4 = options.weight) != null ? _ref4 : "normal";
-        font_style = (_ref5 = options.style) != null ? _ref5 : "normal";
-        scale = (_ref6 = (_ref7 = (_ref8 = options.scale) != null ? _ref8.value : void 0) != null ? _ref7 : options.scale) != null ? _ref6 : 1;
-        surface.save();
-        surface.font = "" + font_weight + " " + font_style + " " + font_size + "px '" + font_family + "'";
-        surface.globalAlpha = (_ref9 = (_ref10 = (_ref11 = options.alpha) != null ? _ref11.value : void 0) != null ? _ref10 : options.alpha) != null ? _ref9 : 1;
-        return surface.scale(scale, scale);
-      };
-    })(this),
-    line: (function(_this) {
-      return function(x1, y1, x2, y2, options, surface) {
-        var _ref, _ref1, _ref2, _ref3;
-        if (options == null) {
-          options = {};
-        }
-        if (surface == null) {
-          surface = "";
-        }
-        x1 = (_ref = x1.value) != null ? _ref : x1;
-        y1 = (_ref1 = y1.value) != null ? _ref1 : y1;
-        x2 = (_ref2 = x2.value) != null ? _ref2 : x2;
-        y2 = (_ref3 = y2.value) != null ? _ref3 : y2;
-        surface = _this._startPath(surface, options);
-        surface.moveTo(x1, y1);
-        surface.lineTo(x2, y2);
-        return _this._finishPath(surface, options);
-      };
-    })(this),
-    rectangle: (function(_this) {
-      return function(x1, y1, x2, y2, options, surface) {
-        var _ref, _ref1, _ref2, _ref3;
-        if (options == null) {
-          options = {};
-        }
-        if (surface == null) {
-          surface = "";
-        }
-        x1 = (_ref = x1.value) != null ? _ref : x1;
-        y1 = (_ref1 = y1.value) != null ? _ref1 : y1;
-        x2 = (_ref2 = x2.value) != null ? _ref2 : x2;
-        y2 = (_ref3 = y2.value) != null ? _ref3 : y2;
-        surface = _this._startPath(surface, options);
-        surface.rect(x1, y1, x2 - x1, y2 - y1);
-        return _this._finishPath(surface, options);
-      };
-    })(this),
-    boxEllipse: (function(_this) {
-      return function(x1, y1, x2, y2, options, surface) {
-        var rx, ry, x, y, _ref, _ref1, _ref2, _ref3;
-        if (options == null) {
-          options = {};
-        }
-        if (surface == null) {
-          surface = "";
-        }
-        x1 = (_ref = x1.value) != null ? _ref : x1;
-        y1 = (_ref1 = y1.value) != null ? _ref1 : y1;
-        x2 = (_ref2 = x2.value) != null ? _ref2 : x2;
-        y2 = (_ref3 = y2.value) != null ? _ref3 : y2;
-        x = (x1 + x2) / 2;
-        y = (y1 + y2) / 2;
-        rx = (x2 - x1) / 2;
-        ry = (y2 - y1) / 2;
-        return _this.radiusEllipse(x, y, rx, ry, options, surface);
-      };
-    })(this),
-    radiusEllipse: (function(_this) {
-      return function(x, y, rx, ry, options, surface) {
-        var i, step, _i, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
-        if (options == null) {
-          options = {};
-        }
-        if (surface == null) {
-          surface = "";
-        }
-        x = (_ref = x.value) != null ? _ref : x;
-        y = (_ref1 = y.value) != null ? _ref1 : y;
-        rx = (_ref2 = rx.value) != null ? _ref2 : rx;
-        ry = (_ref3 = ry.value) != null ? _ref3 : ry;
-        surface = _this._startPath(surface, options);
-        step = (_ref4 = (_ref5 = (_ref6 = options.step) != null ? _ref6.value : void 0) != null ? _ref5 : options.step) != null ? _ref4 : 0.1;
-        if (rx === ry) {
-          surface.arc(x, y, rx, 0, 2 * Math.PI, false);
-        } else {
-          surface.moveTo(x + rx, y);
-          for (i = _i = 0, _ref7 = Math.PI * 2 + step; 0 <= _ref7 ? _i <= _ref7 : _i >= _ref7; i = 0 <= _ref7 ? ++_i : --_i) {
-            surface.lineTo(x + (Math.cos(i) * rx), y + (Math.sin(i) * ry));
-          }
-        }
-        return _this._finishPath(surface, options);
-      };
-    })(this),
-    boxPolygon: (function(_this) {
-      return function(x1, y1, x2, y2, sides, options, surface) {
-        if (options == null) {
-          options = {};
-        }
-        if (surface == null) {
-          surface = "";
-        }
-        return pass;
-      };
-    })(this),
-    radiusPolygon: (function(_this) {
-      return function(x, y, r, sides, options, surface) {
-        if (options == null) {
-          options = {};
-        }
-        if (surface == null) {
-          surface = "";
-        }
-        return pass;
-      };
-    })(this),
-    text: (function(_this) {
-      return function(x, y, text, options, surface) {
-        var text_width, _ref, _ref1, _ref2, _ref3, _ref4;
-        if (options == null) {
-          options = {};
-        }
-        if (surface == null) {
-          surface = "";
-        }
-        x = (_ref = x.value) != null ? _ref : x;
-        y = (_ref1 = y.value) != null ? _ref1 : y;
-        if (options.alignment == null) {
-          options.alignment = "left";
-        }
-        options.scale = (_ref2 = (_ref3 = (_ref4 = options.scale) != null ? _ref4.value : void 0) != null ? _ref3 : options.scale) != null ? _ref2 : 1;
-        options._is_text = true;
-        options.text = text;
-        options.y = y;
-        if (options.fill == null) {
-          options.fill = true;
-        }
-        if (options.fillColor == null) {
-          options.fillColor = "black";
-        }
-        if (options.stroke == null) {
-          options.stroke = false;
-        }
-        if (alignment === "left") {
-          options.x = x;
-        } else {
-          text_width = _this._getTextWidth(text, options);
-          if (alignment === "center") {
-            options.x = x - ((text_width / 2) * scale * scale);
-          } else if (alignment === "right") {
-            options.x = x - text_width;
-          }
-        }
-        _this._startPath(surface, options);
-        _this._finishPath(surface, options);
-        return surface.restore();
-      };
-    })(this)
-  };
-
   Engine.prototype.ease = {
     _calculateElasticValues: (function(_this) {
       return function(amplitude, period, change, inout) {
@@ -506,7 +277,7 @@
         if (overshoot == null) {
           overshoot = 1.70158;
         }
-        return new Ease("backIn", infinite, start, end, _this.current_frame, duration, overshoot);
+        return new Ease(_this, "backIn", infinite, start, end, _this.current_frame, duration, overshoot);
       };
     })(this),
     backOut: (function(_this) {
@@ -517,7 +288,7 @@
         if (overshoot == null) {
           overshoot = 1.70158;
         }
-        return new Ease("backOut", infinite, start, end, _this.current_frame, duration, overshoot);
+        return new Ease(_this, "backOut", infinite, start, end, _this.current_frame, duration, overshoot);
       };
     })(this),
     backInOut: (function(_this) {
@@ -528,7 +299,7 @@
         if (overshoot == null) {
           overshoot = 1.70158;
         }
-        return new Ease("backInOut", infinite, start, end, _this.current_frame, duration, overshoot);
+        return new Ease(_this, "backInOut", infinite, start, end, _this.current_frame, duration, overshoot);
       };
     })(this),
     bounceOut: (function(_this) {
@@ -536,7 +307,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("bounceOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "bounceOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     bounceIn: (function(_this) {
@@ -544,7 +315,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("bounceIn", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "bounceIn", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     bounceInOut: (function(_this) {
@@ -552,7 +323,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("bounceInOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "bounceInOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     circOut: (function(_this) {
@@ -560,7 +331,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("circOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "circOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     circIn: (function(_this) {
@@ -568,7 +339,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("circIn", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "circIn", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     circInOut: (function(_this) {
@@ -576,7 +347,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("circInOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "circInOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     cubicOut: (function(_this) {
@@ -584,7 +355,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("cubicOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "cubicOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     cubicIn: (function(_this) {
@@ -592,7 +363,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("cubicIn", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "cubicIn", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     cubicInOut: (function(_this) {
@@ -600,7 +371,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("cubicInOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "cubicInOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     elasticOut: (function(_this) {
@@ -617,7 +388,7 @@
         }
         _ref = _this._calculateElasticValues(amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2];
         end = start + change;
-        return new Ease("elasticOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "elasticOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     elasticIn: (function(_this) {
@@ -634,7 +405,7 @@
         }
         _ref = _this._calculateElasticValues(amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2];
         end = start + change;
-        return new Ease("elasticIn", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "elasticIn", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     elasticInOut: (function(_this) {
@@ -651,7 +422,7 @@
         }
         _ref = _this._calculateElasticValues(amplitude, period, end - start, true), amplitude = _ref[0], period = _ref[1], change = _ref[2];
         end = start + change;
-        return new Ease("elasticInOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "elasticInOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     expoOut: (function(_this) {
@@ -659,7 +430,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("expoOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "expoOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     expoIn: (function(_this) {
@@ -667,7 +438,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("expoIn", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "expoIn", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     expoInOut: (function(_this) {
@@ -675,7 +446,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("expoInOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "expoInOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     linearNone: (function(_this) {
@@ -683,7 +454,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("linearNone", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "linearNone", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     linearOut: (function(_this) {
@@ -691,7 +462,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("linearNone", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "linearNone", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     linearIn: (function(_this) {
@@ -699,7 +470,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("linearNone", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "linearNone", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     linearInOut: (function(_this) {
@@ -707,7 +478,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("linearNone", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "linearNone", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     quadOut: (function(_this) {
@@ -715,7 +486,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("quadOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "quadOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     quadIn: (function(_this) {
@@ -723,7 +494,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("quadIn", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "quadIn", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     quadInOut: (function(_this) {
@@ -731,7 +502,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("quadInOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "quadInOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     quartOut: (function(_this) {
@@ -739,7 +510,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("quartOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "quartOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     quartIn: (function(_this) {
@@ -747,7 +518,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("quartIn", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "quartIn", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     quartInOut: (function(_this) {
@@ -755,7 +526,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("quartInOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "quartInOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     sineOut: (function(_this) {
@@ -763,7 +534,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("sineOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "sineOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     sineIn: (function(_this) {
@@ -771,7 +542,7 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("sineIn", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "sineIn", infinite, start, end, _this.current_frame, duration);
       };
     })(this),
     sineInOut: (function(_this) {
@@ -779,15 +550,16 @@
         if (infinite == null) {
           infinite = false;
         }
-        return new Ease("sineInOut", infinite, start, end, _this.current_frame, duration);
+        return new Ease(_this, "sineInOut", infinite, start, end, _this.current_frame, duration);
       };
     })(this)
   };
 
   Ease = (function() {
     function Ease() {
-      var duration, end, infinite, params, start, start_frame, type;
-      type = arguments[0], infinite = arguments[1], start = arguments[2], end = arguments[3], start_frame = arguments[4], duration = arguments[5], params = 7 <= arguments.length ? __slice.call(arguments, 6) : [];
+      var duration, end, engine, infinite, params, start, start_frame, type;
+      engine = arguments[0], type = arguments[1], infinite = arguments[2], start = arguments[3], end = arguments[4], start_frame = arguments[5], duration = arguments[6], params = 8 <= arguments.length ? __slice.call(arguments, 7) : [];
+      this.engine = engine;
       this.infinite = infinite;
       this.start = start;
       this.start_frame = start_frame;
@@ -802,15 +574,37 @@
       this.backInOut = __bind(this.backInOut, this);
       this.backOut = __bind(this.backOut, this);
       this.backIn = __bind(this.backIn, this);
+      this.valueOf = __bind(this.valueOf, this);
       this.updateValue = __bind(this.updateValue, this);
       this.func = this[type];
       this.change = end - this.start;
       this.value = this.start;
+      this.last_updated = this.start_frame;
       this.finished = false;
     }
 
     Ease.prototype.updateValue = function(current_frame) {
-      return this.value = this.func(current_frame - this.start_frame);
+      if (!this.finished) {
+        if (current_frame >= (this.start_frame = this.duration)) {
+          if (this.infinite) {
+            this.start_frame = this.current_frame;
+            return this.value = this.start;
+          } else {
+            this.finished = true;
+            return this.value = this.start + this.change;
+          }
+        } else {
+          return this.value = this.func(current_frame - this.start_frame);
+        }
+      }
+    };
+
+    Ease.prototype.valueOf = function() {
+      if (this.engine.current_frame > this.last_updated) {
+        this.updateValue(this.engine.current_frame);
+        this.last_updated = this.engine.current_frame;
+      }
+      return this.value;
     };
 
     Ease.prototype.backIn = function(time) {

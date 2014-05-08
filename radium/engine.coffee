@@ -14,7 +14,6 @@ class Engine
 		@sounds = {}
 		@sprites = {}
 		@tilesets = {}
-		@easings = []
 		@named_timers = {}
 		@unnamed_timers = []
 
@@ -80,21 +79,6 @@ class Engine
 			belated_timeout = overtime % frame_interval
 			setTimeout(@iteration, belated_timeout)
 			
-	updateEasings: =>
-		for easing in @easings
-			if @current_frame >= (easing.start_frame + easing.duration) 
-				if easing.infinite
-					easing.start_frame = @current_frame
-					easing.updateValue(@current_frame)
-				else
-					easing.finished = true
-					easing.value = easing.end
-			else
-				easing.updateValue(@current_frame)
-				
-		# Clean up finished easings
-		@easings = @easings.filter (obj) -> not obj.finished
-	
 	updateTimers: =>
 		for timer in @unnamed_timers.concat (val for key, val of @named_timers)
 			timer.step()
