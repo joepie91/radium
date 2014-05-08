@@ -729,6 +729,10 @@
       if (current_frame >= this.start_frame + this.duration) {
         if (this.infinite) {
           this.start_frame = current_frame;
+          if (this.invert_repeat) {
+            this.start = this.start + this.change;
+            this.change = -this.change;
+          }
           return this.value = this.start;
         } else if (this.next != null) {
           return this.goToNext();

@@ -117,6 +117,9 @@ class Ease
 		if current_frame >= @start_frame + @duration
 			if @infinite
 				@start_frame = current_frame
+				if @invert_repeat
+					@start = @start + @change
+					@change = -@change
 				@value = @start
 			else if @next?
 				@goToNext()	
