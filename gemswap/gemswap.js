@@ -93,7 +93,7 @@
         });
       };
       diamond.onMouseOver = function() {
-        this.fade_value = this.engine.ease.circOut(0, 1, 30, this.engine.ease.bounceOut(1, 0, 45));
+        this.fade_value = this.engine.ease.circOut(0, 1, 10, this.engine.ease.bounceOut(1, 0, 35));
         cursor = this.engine.getObject("cursor").getInstances()[0];
         cursor.x = this.x - 9;
         return cursor.y = this.y - 9;

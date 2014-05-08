@@ -93,7 +93,6 @@ class Ease
 		@value = @start
 		@last_updated = @start_frame
 		@finished = false
-		console.log(this)
 		# TODO: Investigate whether JS engines cache deterministic outcomes by themselves. If not,
 		#       the below could provide some performance gain.
 		#@bounce_constant_1 = 1 / 2.75
@@ -101,7 +100,6 @@ class Ease
 		#@bounce_constant_3 = 2.5 / 2.75
 		
 	goToNext: =>
-		console.log("next", @next)
 		@func = this[@next.type]
 		@change = @next.change
 		@value = @next.value
@@ -111,6 +109,7 @@ class Ease
 		@change = @next.change
 		@invert_repeat = @next.invert_repeat
 		@params = @next.params
+		@duration = @next.duration
 		@finished = false
 		@next = @next.next
 		
@@ -195,4 +194,3 @@ class Ease
 		else
 			time = time - 2
 			return @change / 2 * (Math.sqrt(1 - time * time) + 1) + @begin
-	

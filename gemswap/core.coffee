@@ -115,7 +115,7 @@ $(->
 		
 		diamond.onMouseOver = ->
 			#@fade_decay_current = 1
-			@fade_value = @engine.ease.circOut(0, 1, 30, @engine.ease.bounceOut(1, 0, 45))
+			@fade_value = @engine.ease.circOut(0, 1, 10, @engine.ease.bounceOut(1, 0, 35))
 			
 			cursor = @engine.getObject("cursor").getInstances()[0]
 			cursor.x = @x - 9

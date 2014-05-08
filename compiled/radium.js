@@ -708,11 +708,9 @@
       this.value = this.start;
       this.last_updated = this.start_frame;
       this.finished = false;
-      console.log(this);
     }
 
     Ease.prototype.goToNext = function() {
-      console.log("next", this.next);
       this.func = this[this.next.type];
       this.change = this.next.change;
       this.value = this.next.value;
@@ -722,6 +720,7 @@
       this.change = this.next.change;
       this.invert_repeat = this.next.invert_repeat;
       this.params = this.next.params;
+      this.duration = this.next.duration;
       this.finished = false;
       return this.next = this.next.next;
     };

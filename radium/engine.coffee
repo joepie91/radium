@@ -18,6 +18,8 @@ class Engine
 		@unnamed_timers = []
 		
 		# The following is to make the engine object available in library methods
+		# FUTURE: Iterate over easing methods and create an engine-bound version
+		#         in the local engine object, overriding the prototype methods?
 		@ease.engine = this
 
 	addCanvas: (canvas, label = "") =>
