@@ -21,6 +21,9 @@
       this.createScene = __bind(this.createScene, this);
       this.setPreloadScene = __bind(this.setPreloadScene, this);
       this.setInitialScene = __bind(this.setInitialScene, this);
+      this.skipTimers = __bind(this.skipTimers, this);
+      this.updateTimers = __bind(this.updateTimers, this);
+      this.updateEasings = __bind(this.updateEasings, this);
       this.iteration = __bind(this.iteration, this);
       this.loop = __bind(this.loop, this);
       this.start = __bind(this.start, this);
@@ -33,11 +36,15 @@
       this.last_frameskip_collection = Math.floor(Date.now());
       this.frameskip = 0;
       this.current_frameskip = 0;
+      this.current_frame = 0;
       this.scenes = {};
       this.objects = {};
       this.sounds = {};
       this.sprites = {};
       this.tilesets = {};
+      this.easings = [];
+      this.named_timers = {};
+      this.unnamed_timers = [];
     }
 
     Engine.prototype.addCanvas = function(canvas, label) {
@@ -79,15 +86,18 @@
     };
 
     Engine.prototype.iteration = function() {
-      var belated_timeout, current_frame, frame_interval, name, next_frame, overtime, scene, _ref;
+      var belated_timeout, current_frame, frame_interval, name, next_frame, overtime, scene, skipped_frames, _ref;
       frame_interval = 1000 / this.fps;
       current_frame = Date.now();
       next_frame = current_frame + frame_interval;
+      this.current_frame += 1;
       if (Math.floor(current_frame) > this.last_frameskip_collection) {
         this.frameskip = this.current_frameskip;
         this.current_frameskip = 0;
         this.last_frameskip_collection = Math.floor(current_frame);
       }
+      this.updateEasings();
+      this.updateTimers();
       _ref = this.scenes;
       for (name in _ref) {
         scene = _ref[name];
@@ -99,10 +109,87 @@
         return setTimeout(this.iteration, next_frame - Date.now());
       } else {
         overtime = Date.now() - next_frame;
-        this.current_frameskip += Math.floor(overtime / frame_interval);
+        skipped_frames = Math.floor(overtime / frame_interval);
+        this.current_frameskip += skipped_frames;
+        this.current_frame += skipped_frames;
+        this.skipTimers(skipped_frames);
         belated_timeout = overtime % frame_interval;
         return setTimeout(this.iteration, belated_timeout);
       }
+    };
+
+    Engine.prototype.updateEasings = function() {
+      var easing, _i, _len, _ref;
+      _ref = this.easings;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        easing = _ref[_i];
+        if (this.current_frame >= (easing.start_frame + easing.duration)) {
+          if (easing.infinite) {
+            easing.start_frame = this.current_frame;
+            easing.updateValue(this.current_frame);
+          } else {
+            easing.finished = true;
+            easing.value = easing.end;
+          }
+        } else {
+          easing.updateValue(this.current_frame);
+        }
+      }
+      return this.easings = this.easings.filter(function(obj) {
+        return !obj.finished;
+      });
+    };
+
+    Engine.prototype.updateTimers = function() {
+      var key, timer, timer_name, val, _i, _len, _ref, _ref1, _results;
+      _ref = this.unnamed_timers.concat((function() {
+        var _ref, _results;
+        _ref = this.named_timers;
+        _results = [];
+        for (key in _ref) {
+          val = _ref[key];
+          _results.push(val);
+        }
+        return _results;
+      }).call(this));
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        timer = _ref[_i];
+        timer.step();
+      }
+      this.unnamed_timers = this.unnamed_timers.filter(function(obj) {
+        return !obj.finished;
+      });
+      _ref1 = this.named_timers;
+      _results = [];
+      for (timer_name in _ref1) {
+        timer = _ref1[timer_name];
+        if (timer.finished) {
+          _results.push(delete this.named_timers[timer_name]);
+        } else {
+          _results.push(void 0);
+        }
+      }
+      return _results;
+    };
+
+    Engine.prototype.skipTimers = function(frames) {
+      var key, timer, val, _i, _len, _ref, _results;
+      _ref = this.unnamed_timers.concat((function() {
+        var _ref, _results1;
+        _ref = this.named_timers;
+        _results1 = [];
+        for (key in _ref) {
+          val = _ref[key];
+          _results1.push(val);
+        }
+        return _results1;
+      }).call(this));
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        timer = _ref[_i];
+        _results.push(timer.skip(frames));
+      }
+      return _results;
     };
 
     Engine.prototype.setInitialScene = function(scene) {
@@ -196,19 +283,19 @@
     })(this),
     _finishPath: (function(_this) {
       return function(surface, options) {
-        var _ref, _ref1, _ref10, _ref11, _ref12, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+        var _ref, _ref1, _ref10, _ref11, _ref12, _ref13, _ref14, _ref15, _ref16, _ref17, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
         if ((_ref = options.stroke) != null ? _ref : true) {
-          surface.lineWidth = (_ref1 = (_ref2 = options.lineWidth) != null ? _ref2 : (_ref3 = options.pen) != null ? _ref3.lineWidth : void 0) != null ? _ref1 : 1;
-          surface.strokeStyle = (_ref4 = (_ref5 = options.lineColor) != null ? _ref5 : (_ref6 = options.pen) != null ? _ref6.lineColor : void 0) != null ? _ref4 : "black";
-          if ((_ref7 = options._is_text) != null ? _ref7 : false) {
+          surface.lineWidth = (_ref1 = (_ref2 = (_ref3 = (_ref4 = (_ref5 = options.lineWidth) != null ? _ref5.value : void 0) != null ? _ref4 : options.lineWidth) != null ? _ref3 : (_ref6 = options.pen) != null ? (_ref7 = _ref6.lineWidth) != null ? _ref7.value : void 0 : void 0) != null ? _ref2 : (_ref8 = options.pen) != null ? _ref8.lineWidth : void 0) != null ? _ref1 : 1;
+          surface.strokeStyle = (_ref9 = (_ref10 = options.lineColor) != null ? _ref10 : (_ref11 = options.pen) != null ? _ref11.lineColor : void 0) != null ? _ref9 : "black";
+          if ((_ref12 = options._is_text) != null ? _ref12 : false) {
             surface.strokeText(options.text, options.x, options.y);
           } else {
             surface.stroke();
           }
         }
-        if ((_ref8 = options.fill) != null ? _ref8 : false) {
-          surface.fillStyle = (_ref9 = (_ref10 = options.fillColor) != null ? _ref10 : (_ref11 = options.pen) != null ? _ref11.fillColor : void 0) != null ? _ref9 : "white";
-          if ((_ref12 = options._is_text) != null ? _ref12 : false) {
+        if ((_ref13 = options.fill) != null ? _ref13 : false) {
+          surface.fillStyle = (_ref14 = (_ref15 = options.fillColor) != null ? _ref15 : (_ref16 = options.pen) != null ? _ref16.fillColor : void 0) != null ? _ref14 : "white";
+          if ((_ref17 = options._is_text) != null ? _ref17 : false) {
             return surface.fillText(options.text, options.x, options.y);
           } else {
             return surface.fill();
@@ -227,26 +314,31 @@
     })(this),
     _applyTextContext: (function(_this) {
       return function(surface, options) {
-        var font_family, font_size, font_style, font_weight, scale, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+        var font_family, font_size, font_style, font_weight, scale, _ref, _ref1, _ref10, _ref11, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
         font_family = (_ref = options.font) != null ? _ref : "sans-serif";
-        font_size = (_ref1 = options.size) != null ? _ref1 : 16;
-        font_weight = (_ref2 = options.weight) != null ? _ref2 : "normal";
-        font_style = (_ref3 = options.style) != null ? _ref3 : "normal";
-        scale = (_ref4 = options.scale) != null ? _ref4 : 1;
+        font_size = (_ref1 = (_ref2 = (_ref3 = options.size) != null ? _ref3.value : void 0) != null ? _ref2 : options.size) != null ? _ref1 : 16;
+        font_weight = (_ref4 = options.weight) != null ? _ref4 : "normal";
+        font_style = (_ref5 = options.style) != null ? _ref5 : "normal";
+        scale = (_ref6 = (_ref7 = (_ref8 = options.scale) != null ? _ref8.value : void 0) != null ? _ref7 : options.scale) != null ? _ref6 : 1;
         surface.save();
         surface.font = "" + font_weight + " " + font_style + " " + font_size + "px '" + font_family + "'";
-        surface.globalAlpha = (_ref5 = options.alpha) != null ? _ref5 : 1;
+        surface.globalAlpha = (_ref9 = (_ref10 = (_ref11 = options.alpha) != null ? _ref11.value : void 0) != null ? _ref10 : options.alpha) != null ? _ref9 : 1;
         return surface.scale(scale, scale);
       };
     })(this),
     line: (function(_this) {
       return function(x1, y1, x2, y2, options, surface) {
+        var _ref, _ref1, _ref2, _ref3;
         if (options == null) {
           options = {};
         }
         if (surface == null) {
           surface = "";
         }
+        x1 = (_ref = x1.value) != null ? _ref : x1;
+        y1 = (_ref1 = y1.value) != null ? _ref1 : y1;
+        x2 = (_ref2 = x2.value) != null ? _ref2 : x2;
+        y2 = (_ref3 = y2.value) != null ? _ref3 : y2;
         surface = _this._startPath(surface, options);
         surface.moveTo(x1, y1);
         surface.lineTo(x2, y2);
@@ -255,12 +347,17 @@
     })(this),
     rectangle: (function(_this) {
       return function(x1, y1, x2, y2, options, surface) {
+        var _ref, _ref1, _ref2, _ref3;
         if (options == null) {
           options = {};
         }
         if (surface == null) {
           surface = "";
         }
+        x1 = (_ref = x1.value) != null ? _ref : x1;
+        y1 = (_ref1 = y1.value) != null ? _ref1 : y1;
+        x2 = (_ref2 = x2.value) != null ? _ref2 : x2;
+        y2 = (_ref3 = y2.value) != null ? _ref3 : y2;
         surface = _this._startPath(surface, options);
         surface.rect(x1, y1, x2 - x1, y2 - y1);
         return _this._finishPath(surface, options);
@@ -268,13 +365,17 @@
     })(this),
     boxEllipse: (function(_this) {
       return function(x1, y1, x2, y2, options, surface) {
-        var rx, ry, x, y;
+        var rx, ry, x, y, _ref, _ref1, _ref2, _ref3;
         if (options == null) {
           options = {};
         }
         if (surface == null) {
           surface = "";
         }
+        x1 = (_ref = x1.value) != null ? _ref : x1;
+        y1 = (_ref1 = y1.value) != null ? _ref1 : y1;
+        x2 = (_ref2 = x2.value) != null ? _ref2 : x2;
+        y2 = (_ref3 = y2.value) != null ? _ref3 : y2;
         x = (x1 + x2) / 2;
         y = (y1 + y2) / 2;
         rx = (x2 - x1) / 2;
@@ -284,20 +385,24 @@
     })(this),
     radiusEllipse: (function(_this) {
       return function(x, y, rx, ry, options, surface) {
-        var i, step, _i, _ref, _ref1;
+        var i, step, _i, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
         if (options == null) {
           options = {};
         }
         if (surface == null) {
           surface = "";
         }
+        x = (_ref = x.value) != null ? _ref : x;
+        y = (_ref1 = y.value) != null ? _ref1 : y;
+        rx = (_ref2 = rx.value) != null ? _ref2 : rx;
+        ry = (_ref3 = ry.value) != null ? _ref3 : ry;
         surface = _this._startPath(surface, options);
-        step = (_ref = options.step) != null ? _ref : 0.1;
+        step = (_ref4 = (_ref5 = (_ref6 = options.step) != null ? _ref6.value : void 0) != null ? _ref5 : options.step) != null ? _ref4 : 0.1;
         if (rx === ry) {
           surface.arc(x, y, rx, 0, 2 * Math.PI, false);
         } else {
           surface.moveTo(x + rx, y);
-          for (i = _i = 0, _ref1 = Math.PI * 2 + step; 0 <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+          for (i = _i = 0, _ref7 = Math.PI * 2 + step; 0 <= _ref7 ? _i <= _ref7 : _i >= _ref7; i = 0 <= _ref7 ? ++_i : --_i) {
             surface.lineTo(x + (Math.cos(i) * rx), y + (Math.sin(i) * ry));
           }
         }
@@ -328,19 +433,19 @@
     })(this),
     text: (function(_this) {
       return function(x, y, text, options, surface) {
-        var text_width;
+        var text_width, _ref, _ref1, _ref2, _ref3, _ref4;
         if (options == null) {
           options = {};
         }
         if (surface == null) {
           surface = "";
         }
+        x = (_ref = x.value) != null ? _ref : x;
+        y = (_ref1 = y.value) != null ? _ref1 : y;
         if (options.alignment == null) {
           options.alignment = "left";
         }
-        if (options.scale == null) {
-          options.scale = 1;
-        }
+        options.scale = (_ref2 = (_ref3 = (_ref4 = options.scale) != null ? _ref4.value : void 0) != null ? _ref3 : options.scale) != null ? _ref2 : 1;
         options._is_text = true;
         options.text = text;
         options.y = y;

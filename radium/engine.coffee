@@ -7,12 +7,16 @@ class Engine
 		@last_frameskip_collection = Math.floor(Date.now())
 		@frameskip = 0
 		@current_frameskip = 0
+		@current_frame = 0
 		
 		@scenes = {}
 		@objects = {}
 		@sounds = {}
 		@sprites = {}
 		@tilesets = {}
+		@easings = []
+		@named_timers = {}
+		@unnamed_timers = []
 
 	addCanvas: (canvas, label = "") =>
 		@canvases[label] = util.unpackElement(canvas)
@@ -48,12 +52,19 @@ class Engine
 		current_frame = Date.now()
 		next_frame = current_frame + frame_interval
 		
+		@current_frame += 1
+		
 		if Math.floor(current_frame) > @last_frameskip_collection
 			@frameskip = @current_frameskip
 			@current_frameskip = 0
 			@last_frameskip_collection = Math.floor(current_frame)
 
-		# Actual iteration code
+		# Actual iteration code...
+		# First update the registered easings.
+		@updateEasings()
+		# Then process registered timers.
+		@updateTimers()
+		# Now we run the scene-specific code.
 		scene.iteration() for name, scene of @scenes when scene.active
 		
 		# Frameskip check and triggering next iteration
@@ -62,10 +73,43 @@ class Engine
 		else
 			# Frameskip!
 			overtime = Date.now() - next_frame
-			@current_frameskip += Math.floor(overtime / frame_interval)
+			skipped_frames = Math.floor(overtime / frame_interval)
+			@current_frameskip += skipped_frames
+			@current_frame += skipped_frames
+			@skipTimers(skipped_frames)
 			belated_timeout = overtime % frame_interval
 			setTimeout(@iteration, belated_timeout)
 			
+	updateEasings: =>
+		for easing in @easings
+			if @current_frame >= (easing.start_frame + easing.duration) 
+				if easing.infinite
+					easing.start_frame = @current_frame
+					easing.updateValue(@current_frame)
+				else
+					easing.finished = true
+					easing.value = easing.end
+			else
+				easing.updateValue(@current_frame)
+				
+		# Clean up finished easings
+		@easings = @easings.filter (obj) -> not obj.finished
+	
+	updateTimers: =>
+		for timer in @unnamed_timers.concat (val for key, val of @named_timers)
+			timer.step()
+			
+		# Clean up finished timers
+		@unnamed_timers = @unnamed_timers.filter (obj) -> not obj.finished
+		
+		for timer_name, timer of @named_timers
+			if timer.finished
+				delete @named_timers[timer_name]
+			
+	skipTimers: (frames) =>
+		for timer in @unnamed_timers.concat (val for key, val of @named_timers)
+			timer.skip(frames)
+	
 	setInitialScene: (scene) =>
 		@initial_scene = scene
 		
