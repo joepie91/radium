@@ -691,6 +691,9 @@
       this.invert_repeat = invert_repeat;
       this.next = next;
       this.params = params;
+      this.cubicInOut = __bind(this.cubicInOut, this);
+      this.cubicOut = __bind(this.cubicOut, this);
+      this.cubicIn = __bind(this.cubicIn, this);
       this.circInOut = __bind(this.circInOut, this);
       this.circOut = __bind(this.circOut, this);
       this.circIn = __bind(this.circIn, this);
@@ -832,6 +835,26 @@
       } else {
         time = time - 2;
         return this.change / 2 * (Math.sqrt(1 - time * time) + 1) + this.start;
+      }
+    };
+
+    Ease.prototype.cubicIn = function(time) {
+      time = time / this.duration;
+      return this.change * time * time * time + this.start;
+    };
+
+    Ease.prototype.cubicOut = function(time) {
+      time = time / this.duration - 1;
+      return this.change * (time * time * time + 1) + this.start;
+    };
+
+    Ease.prototype.cubicInOut = function(time) {
+      time = time / (duration / 2);
+      if (time < 1) {
+        return change / 2 * time * time * time + this.start;
+      } else {
+        time = time - 2;
+        return change / 2 * (time * time * time + 2) + begin;
       }
     };
 

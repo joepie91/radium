@@ -197,3 +197,19 @@ class Ease
 		else
 			time = time - 2
 			return @change / 2 * (Math.sqrt(1 - time * time) + 1) + @start
+
+	cubicIn: (time) =>
+		time = time / @duration
+		return @change * time * time * time + @start
+
+	cubicOut: (time) =>
+		time = time / @duration - 1
+		return @change * (time * time * time + 1) + @start
+
+	cubicInOut: (time) =>
+		time = time / (duration / 2)
+		if time < 1
+			return change / 2 * time * time * time + @start
+		else
+			time = time - 2
+			return change / 2 * (time * time * time + 2) + begin
