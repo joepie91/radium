@@ -16,6 +16,9 @@ class Engine
 		@tilesets = {}
 		@named_timers = {}
 		@unnamed_timers = []
+		
+		# The following is to make the engine object available in library methods
+		@ease.engine = this
 
 	addCanvas: (canvas, label = "") =>
 		@canvases[label] = util.unpackElement(canvas)
@@ -59,8 +62,6 @@ class Engine
 			@last_frameskip_collection = Math.floor(current_frame)
 
 		# Actual iteration code...
-		# First update the registered easings.
-		@updateEasings()
 		# Then process registered timers.
 		@updateTimers()
 		# Now we run the scene-specific code.

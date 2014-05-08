@@ -1,5 +1,5 @@
 Engine::ease = 
-	_calculateElasticValues: (amplitude, period, change, inout = false) =>
+	_calculateElasticValues: (amplitude, period, change, inout = false) ->
 		if !period?
 			if inout
 				period = duration * (0.3 * 1.5)
@@ -14,104 +14,121 @@ Engine::ease =
 		
 		return [amplitude, period, change]
 			
-	backIn: (start, end, duration, infinite = false, overshoot = 1.70158) =>
-		return new Ease(this, "backIn", infinite, start, end, @current_frame, duration, overshoot)
-	backOut: (start, end, duration, infinite = false, overshoot = 1.70158) =>
-		return new Ease(this, "backOut", infinite, start, end, @current_frame, duration, overshoot)
-	backInOut: (start, end, duration, infinite = false, overshoot = 1.70158) =>
-		return new Ease(this, "backInOut", infinite, start, end, @current_frame, duration, overshoot)
-	bounceOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "bounceOut", infinite, start, end, @current_frame, duration)
-	bounceIn: (start, end, duration, infinite = false) =>
-		return new Ease(this, "bounceIn", infinite, start, end, @current_frame, duration)
-	bounceInOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "bounceInOut", infinite, start, end, @current_frame, duration)
-	circOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "circOut", infinite, start, end, @current_frame, duration)
-	circIn: (start, end, duration, infinite = false) =>
-		return new Ease(this, "circIn", infinite, start, end, @current_frame, duration)
-	circInOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "circInOut", infinite, start, end, @current_frame, duration)
-	cubicOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "cubicOut", infinite, start, end, @current_frame, duration)
-	cubicIn: (start, end, duration, infinite = false) =>
-		return new Ease(this, "cubicIn", infinite, start, end, @current_frame, duration)
-	cubicInOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "cubicInOut", infinite, start, end, @current_frame, duration)
-	elasticOut: (start, end, duration, infinite = false, amplitude = null, period = null) =>
+	backIn: (start, end, duration, next = null, infinite = false , invert_repeat = false, overshoot = 1.70158) ->
+		return new Ease(this.engine, "backIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next, overshoot)
+	backOut: (start, end, duration, next = null, infinite = false , invert_repeat = false, overshoot = 1.70158) ->
+		return new Ease(this.engine, "backOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next, overshoot)
+	backInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false, overshoot = 1.70158) ->
+		return new Ease(this.engine, "backInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next, overshoot)
+	bounceOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		console.log("this", this.engine)
+		return new Ease(this.engine, "bounceOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	bounceIn: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "bounceIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	bounceInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "bounceInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	circOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "circOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	circIn: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "circIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	circInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "circInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	cubicOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "cubicOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	cubicIn: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "cubicIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	cubicInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "cubicInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	elasticOut: (start, end, duration, next = null, infinite = false , invert_repeat = false, amplitude = null, period = null) ->
 		[amplitude, period, change] = @_calculateElasticValues(amplitude, period, end - start)
 		end = start + change
-		return new Ease(this, "elasticOut", infinite, start, end, @current_frame, duration)
-	elasticIn: (start, end, duration, infinite = false, amplitude = null, period = null) =>
+		return new Ease(this.engine, "elasticOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	elasticIn: (start, end, duration, next = null, infinite = false , invert_repeat = false, amplitude = null, period = null) ->
 		[amplitude, period, change] = @_calculateElasticValues(amplitude, period, end - start)
 		end = start + change
-		return new Ease(this, "elasticIn", infinite, start, end, @current_frame, duration)
-	elasticInOut: (start, end, duration, infinite = false, amplitude = null, period = null) =>
+		return new Ease(this.engine, "elasticIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	elasticInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false, amplitude = null, period = null) ->
 		[amplitude, period, change] = @_calculateElasticValues(amplitude, period, end - start, true)
 		end = start + change
-		return new Ease(this, "elasticInOut", infinite, start, end, @current_frame, duration)
-	expoOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "expoOut", infinite, start, end, @current_frame, duration)
-	expoIn: (start, end, duration, infinite = false) =>
-		return new Ease(this, "expoIn", infinite, start, end, @current_frame, duration)
-	expoInOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "expoInOut", infinite, start, end, @current_frame, duration)
-	linearNone: (start, end, duration, infinite = false) =>
-		return new Ease(this, "linearNone", infinite, start, end, @current_frame, duration)
-	linearOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "linearNone", infinite, start, end, @current_frame, duration)
-	linearIn: (start, end, duration, infinite = false) =>
-		return new Ease(this, "linearNone", infinite, start, end, @current_frame, duration)
-	linearInOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "linearNone", infinite, start, end, @current_frame, duration)
-	quadOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "quadOut", infinite, start, end, @current_frame, duration)
-	quadIn: (start, end, duration, infinite = false) =>
-		return new Ease(this, "quadIn", infinite, start, end, @current_frame, duration)
-	quadInOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "quadInOut", infinite, start, end, @current_frame, duration)
-	quartOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "quartOut", infinite, start, end, @current_frame, duration)
-	quartIn: (start, end, duration, infinite = false) =>
-		return new Ease(this, "quartIn", infinite, start, end, @current_frame, duration)
-	quartInOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "quartInOut", infinite, start, end, @current_frame, duration)
-	sineOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "sineOut", infinite, start, end, @current_frame, duration)
-	sineIn: (start, end, duration, infinite = false) =>
-		return new Ease(this, "sineIn", infinite, start, end, @current_frame, duration)
-	sineInOut: (start, end, duration, infinite = false) =>
-		return new Ease(this, "sineInOut", infinite, start, end, @current_frame, duration)
+		return new Ease(this.engine, "elasticInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	expoOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "expoOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	expoIn: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "expoIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	expoInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "expoInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	linearNone: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "linearNone", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	linearOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "linearNone", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	linearIn: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "linearNone", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	linearInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "linearNone", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	quadOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "quadOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	quadIn: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "quadIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	quadInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "quadInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	quartOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "quartOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	quartIn: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "quartIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	quartInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "quartInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	sineOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "sineOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	sineIn: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "sineIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+	sineInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
+		return new Ease(this.engine, "sineInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
 	
 	
 class Ease
 	# Port based on https://github.com/jimjeffers/Easie. I don't think this qualifies as a "bad thing" :)
-	constructor: (@engine, type, @infinite, @start, end, @start_frame, @duration, @params...) ->
-		@func = this[type]
+	constructor: (@engine, @type, @infinite, @start, end, @start_frame, @duration, @invert_repeat, @next, @params...) ->
+		@func = this[@type]
 		@change = end - @start
 		@value = @start
 		@last_updated = @start_frame
 		@finished = false
+		console.log(this)
 		# TODO: Investigate whether JS engines cache deterministic outcomes by themselves. If not,
 		#       the below could provide some performance gain.
 		#@bounce_constant_1 = 1 / 2.75
 		#@bounce_constant_2 = 2 / 2.75
 		#@bounce_constant_3 = 2.5 / 2.75
 		
+	goToNext: =>
+		console.log("next", @next)
+		@func = this[@next.type]
+		@change = @next.change
+		@value = @next.value
+		@start_frame = @last_updated = @engine.current_frame
+		@infinite = @next.infinite
+		@start = @next.start
+		@change = @next.change
+		@invert_repeat = @next.invert_repeat
+		@params = @next.params
+		@finished = false
+		@next = @next.next
+		
 	updateValue: (current_frame) =>
-		if not @finished
-			if current_frame >= @start_frame = @duration
-				if @infinite
-					@start_frame = @current_frame
-					@value = @start
-				else
-					@finished = true
-					@value = @start + @change
+		if current_frame >= @start_frame + @duration
+			if @infinite
+				@start_frame = current_frame
+				@value = @start
+			else if @next?
+				@goToNext()	
 			else
-				@value = @func(current_frame - @start_frame)
+				@finished = true
+				@value = @start + @change
+		else
+			@value = @func(current_frame - @start_frame)
 		
 	valueOf: =>
-		if @engine.current_frame > @last_updated
+		if not @finished and @engine.current_frame > @last_updated
 			@updateValue(@engine.current_frame)
 			@last_updated = @engine.current_frame
 		return @value

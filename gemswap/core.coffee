@@ -58,11 +58,14 @@ $(->
 		diamond.draw_sprite = false
 		
 		diamond.onCreate = ->
+			###
 			@fade_step = 0.045
 			@fade_current_step = @fade_step
 			@fade_value = 0
 			@fade_decay_current = 9999 # Disable by default
 			@fade_decay_max = 8
+			###
+			@fade_value = 0
 			
 			@shimmer_step = @engine.random.number(0.003, 0.007, 0.0005) * Math.random()
 			@shimmer_current_step = @shimmer_step
@@ -71,6 +74,7 @@ $(->
 			@gem_type = @engine.random.pick("diamond", "yellow", "blue")
 		
 		diamond.onStep = ->
+			###
 			if @fade_decay_current < Math.pow(2, @fade_decay_max)
 				@fade_value += @fade_current_step
 				
@@ -84,7 +88,8 @@ $(->
 					@fade_value = 0
 					@fade_decay_current *= 1.5
 					@fade_current_step = @fade_step
-				
+			###
+			
 			@shimmer_value += @shimmer_current_step
 			
 			if @shimmer_value > 0.7
@@ -109,7 +114,8 @@ $(->
 			})
 		
 		diamond.onMouseOver = ->
-			@fade_decay_current = 1
+			#@fade_decay_current = 1
+			@fade_value = @engine.ease.circOut(0, 1, 30, @engine.ease.bounceOut(1, 0, 45))
 			
 			cursor = @engine.getObject("cursor").getInstances()[0]
 			cursor.x = @x - 9

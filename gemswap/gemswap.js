@@ -41,31 +41,37 @@
       diamond.sprite = engine.getSprite("diamond");
       diamond.draw_sprite = false;
       diamond.onCreate = function() {
-        this.fade_step = 0.045;
-        this.fade_current_step = this.fade_step;
+
+        /*
+        			@fade_step = 0.045
+        			@fade_current_step = @fade_step
+        			@fade_value = 0
+        			@fade_decay_current = 9999 # Disable by default
+        			@fade_decay_max = 8
+         */
         this.fade_value = 0;
-        this.fade_decay_current = 9999;
-        this.fade_decay_max = 8;
         this.shimmer_step = this.engine.random.number(0.003, 0.007, 0.0005) * Math.random();
         this.shimmer_current_step = this.shimmer_step;
         this.shimmer_value = 0;
         return this.gem_type = this.engine.random.pick("diamond", "yellow", "blue");
       };
       diamond.onStep = function() {
-        var max;
-        if (this.fade_decay_current < Math.pow(2, this.fade_decay_max)) {
-          this.fade_value += this.fade_current_step;
-          max = 1.5 / this.fade_decay_current;
-          if (this.fade_value > Math.min(max, 1)) {
-            this.fade_value = Math.min(max, 1);
-            this.fade_current_step = -this.fade_step;
-          }
-          if (this.fade_value <= 0) {
-            this.fade_value = 0;
-            this.fade_decay_current *= 1.5;
-            this.fade_current_step = this.fade_step;
-          }
-        }
+
+        /*
+        			if @fade_decay_current < Math.pow(2, @fade_decay_max)
+        				@fade_value += @fade_current_step
+        				
+        				max = 1.5 / @fade_decay_current
+        				
+        				if @fade_value > Math.min(max, 1)
+        					@fade_value = Math.min(max, 1)
+        					@fade_current_step = -@fade_step
+        
+        				if @fade_value <= 0
+        					@fade_value = 0
+        					@fade_decay_current *= 1.5
+        					@fade_current_step = @fade_step
+         */
         this.shimmer_value += this.shimmer_current_step;
         if (this.shimmer_value > 0.7) {
           this.shimmer_value = 0.7;
@@ -87,7 +93,7 @@
         });
       };
       diamond.onMouseOver = function() {
-        this.fade_decay_current = 1;
+        this.fade_value = this.engine.ease.circOut(0, 1, 30, this.engine.ease.bounceOut(1, 0, 45));
         cursor = this.engine.getObject("cursor").getInstances()[0];
         cursor.x = this.x - 9;
         return cursor.y = this.y - 9;

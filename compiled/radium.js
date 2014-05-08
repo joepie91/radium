@@ -43,6 +43,7 @@
       this.tilesets = {};
       this.named_timers = {};
       this.unnamed_timers = [];
+      this.ease.engine = this;
     }
 
     Engine.prototype.addCanvas = function(canvas, label) {
@@ -94,7 +95,6 @@
         this.current_frameskip = 0;
         this.last_frameskip_collection = Math.floor(current_frame);
       }
-      this.updateEasings();
       this.updateTimers();
       _ref = this.scenes;
       for (name in _ref) {
@@ -247,323 +247,449 @@
   })();
 
   Engine.prototype.ease = {
-    _calculateElasticValues: (function(_this) {
-      return function(amplitude, period, change, inout) {
-        var overshoot;
-        if (inout == null) {
-          inout = false;
-        }
-        if (period == null) {
-          if (inout) {
-            period = duration * (0.3 * 1.5);
-          } else {
-            period = duration * 0.3;
-          }
-        }
-        if ((amplitude == null) || amplitude < Math.abs(change)) {
-          amplitude = change;
-          overshoot = period / 4;
+    _calculateElasticValues: function(amplitude, period, change, inout) {
+      var overshoot;
+      if (inout == null) {
+        inout = false;
+      }
+      if (period == null) {
+        if (inout) {
+          period = duration * (0.3 * 1.5);
         } else {
-          overshoot = period / (2 * Math.PI) * Math.asin(change / amplitude);
+          period = duration * 0.3;
         }
-        return [amplitude, period, change];
-      };
-    })(this),
-    backIn: (function(_this) {
-      return function(start, end, duration, infinite, overshoot) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        if (overshoot == null) {
-          overshoot = 1.70158;
-        }
-        return new Ease(_this, "backIn", infinite, start, end, _this.current_frame, duration, overshoot);
-      };
-    })(this),
-    backOut: (function(_this) {
-      return function(start, end, duration, infinite, overshoot) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        if (overshoot == null) {
-          overshoot = 1.70158;
-        }
-        return new Ease(_this, "backOut", infinite, start, end, _this.current_frame, duration, overshoot);
-      };
-    })(this),
-    backInOut: (function(_this) {
-      return function(start, end, duration, infinite, overshoot) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        if (overshoot == null) {
-          overshoot = 1.70158;
-        }
-        return new Ease(_this, "backInOut", infinite, start, end, _this.current_frame, duration, overshoot);
-      };
-    })(this),
-    bounceOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "bounceOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    bounceIn: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "bounceIn", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    bounceInOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "bounceInOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    circOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "circOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    circIn: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "circIn", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    circInOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "circInOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    cubicOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "cubicOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    cubicIn: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "cubicIn", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    cubicInOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "cubicInOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    elasticOut: (function(_this) {
-      return function(start, end, duration, infinite, amplitude, period) {
-        var change, _ref;
-        if (infinite == null) {
-          infinite = false;
-        }
-        if (amplitude == null) {
-          amplitude = null;
-        }
-        if (period == null) {
-          period = null;
-        }
-        _ref = _this._calculateElasticValues(amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2];
-        end = start + change;
-        return new Ease(_this, "elasticOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    elasticIn: (function(_this) {
-      return function(start, end, duration, infinite, amplitude, period) {
-        var change, _ref;
-        if (infinite == null) {
-          infinite = false;
-        }
-        if (amplitude == null) {
-          amplitude = null;
-        }
-        if (period == null) {
-          period = null;
-        }
-        _ref = _this._calculateElasticValues(amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2];
-        end = start + change;
-        return new Ease(_this, "elasticIn", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    elasticInOut: (function(_this) {
-      return function(start, end, duration, infinite, amplitude, period) {
-        var change, _ref;
-        if (infinite == null) {
-          infinite = false;
-        }
-        if (amplitude == null) {
-          amplitude = null;
-        }
-        if (period == null) {
-          period = null;
-        }
-        _ref = _this._calculateElasticValues(amplitude, period, end - start, true), amplitude = _ref[0], period = _ref[1], change = _ref[2];
-        end = start + change;
-        return new Ease(_this, "elasticInOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    expoOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "expoOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    expoIn: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "expoIn", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    expoInOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "expoInOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    linearNone: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "linearNone", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    linearOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "linearNone", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    linearIn: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "linearNone", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    linearInOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "linearNone", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    quadOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "quadOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    quadIn: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "quadIn", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    quadInOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "quadInOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    quartOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "quartOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    quartIn: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "quartIn", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    quartInOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "quartInOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    sineOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "sineOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    sineIn: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "sineIn", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this),
-    sineInOut: (function(_this) {
-      return function(start, end, duration, infinite) {
-        if (infinite == null) {
-          infinite = false;
-        }
-        return new Ease(_this, "sineInOut", infinite, start, end, _this.current_frame, duration);
-      };
-    })(this)
+      }
+      if ((amplitude == null) || amplitude < Math.abs(change)) {
+        amplitude = change;
+        overshoot = period / 4;
+      } else {
+        overshoot = period / (2 * Math.PI) * Math.asin(change / amplitude);
+      }
+      return [amplitude, period, change];
+    },
+    backIn: function(start, end, duration, next, infinite, invert_repeat, overshoot) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      if (overshoot == null) {
+        overshoot = 1.70158;
+      }
+      return new Ease(this.engine, "backIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, overshoot);
+    },
+    backOut: function(start, end, duration, next, infinite, invert_repeat, overshoot) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      if (overshoot == null) {
+        overshoot = 1.70158;
+      }
+      return new Ease(this.engine, "backOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, overshoot);
+    },
+    backInOut: function(start, end, duration, next, infinite, invert_repeat, overshoot) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      if (overshoot == null) {
+        overshoot = 1.70158;
+      }
+      return new Ease(this.engine, "backInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, overshoot);
+    },
+    bounceOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      console.log("this", this.engine);
+      return new Ease(this.engine, "bounceOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    bounceIn: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "bounceIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    bounceInOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "bounceInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    circOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "circOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    circIn: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "circIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    circInOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "circInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    cubicOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "cubicOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    cubicIn: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "cubicIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    cubicInOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "cubicInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    elasticOut: function(start, end, duration, next, infinite, invert_repeat, amplitude, period) {
+      var change, _ref;
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      if (amplitude == null) {
+        amplitude = null;
+      }
+      if (period == null) {
+        period = null;
+      }
+      _ref = this._calculateElasticValues(amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2];
+      end = start + change;
+      return new Ease(this.engine, "elasticOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    elasticIn: function(start, end, duration, next, infinite, invert_repeat, amplitude, period) {
+      var change, _ref;
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      if (amplitude == null) {
+        amplitude = null;
+      }
+      if (period == null) {
+        period = null;
+      }
+      _ref = this._calculateElasticValues(amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2];
+      end = start + change;
+      return new Ease(this.engine, "elasticIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    elasticInOut: function(start, end, duration, next, infinite, invert_repeat, amplitude, period) {
+      var change, _ref;
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      if (amplitude == null) {
+        amplitude = null;
+      }
+      if (period == null) {
+        period = null;
+      }
+      _ref = this._calculateElasticValues(amplitude, period, end - start, true), amplitude = _ref[0], period = _ref[1], change = _ref[2];
+      end = start + change;
+      return new Ease(this.engine, "elasticInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    expoOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "expoOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    expoIn: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "expoIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    expoInOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "expoInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    linearNone: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    linearOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    linearIn: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    linearInOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    quadOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "quadOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    quadIn: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "quadIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    quadInOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "quadInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    quartOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "quartOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    quartIn: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "quartIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    quartInOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "quartInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    sineOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "sineOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    sineIn: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "sineIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    },
+    sineInOut: function(start, end, duration, next, infinite, invert_repeat) {
+      if (next == null) {
+        next = null;
+      }
+      if (infinite == null) {
+        infinite = false;
+      }
+      if (invert_repeat == null) {
+        invert_repeat = false;
+      }
+      return new Ease(this.engine, "sineInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+    }
   };
 
   Ease = (function() {
     function Ease() {
-      var duration, end, engine, infinite, params, start, start_frame, type;
-      engine = arguments[0], type = arguments[1], infinite = arguments[2], start = arguments[3], end = arguments[4], start_frame = arguments[5], duration = arguments[6], params = 8 <= arguments.length ? __slice.call(arguments, 7) : [];
+      var duration, end, engine, infinite, invert_repeat, next, params, start, start_frame, type;
+      engine = arguments[0], type = arguments[1], infinite = arguments[2], start = arguments[3], end = arguments[4], start_frame = arguments[5], duration = arguments[6], invert_repeat = arguments[7], next = arguments[8], params = 10 <= arguments.length ? __slice.call(arguments, 9) : [];
       this.engine = engine;
+      this.type = type;
       this.infinite = infinite;
       this.start = start;
       this.start_frame = start_frame;
       this.duration = duration;
+      this.invert_repeat = invert_repeat;
+      this.next = next;
       this.params = params;
       this.circInOut = __bind(this.circInOut, this);
       this.circOut = __bind(this.circOut, this);
@@ -576,31 +702,48 @@
       this.backIn = __bind(this.backIn, this);
       this.valueOf = __bind(this.valueOf, this);
       this.updateValue = __bind(this.updateValue, this);
-      this.func = this[type];
+      this.goToNext = __bind(this.goToNext, this);
+      this.func = this[this.type];
       this.change = end - this.start;
       this.value = this.start;
       this.last_updated = this.start_frame;
       this.finished = false;
+      console.log(this);
     }
 
+    Ease.prototype.goToNext = function() {
+      console.log("next", this.next);
+      this.func = this[this.next.type];
+      this.change = this.next.change;
+      this.value = this.next.value;
+      this.start_frame = this.last_updated = this.engine.current_frame;
+      this.infinite = this.next.infinite;
+      this.start = this.next.start;
+      this.change = this.next.change;
+      this.invert_repeat = this.next.invert_repeat;
+      this.params = this.next.params;
+      this.finished = false;
+      return this.next = this.next.next;
+    };
+
     Ease.prototype.updateValue = function(current_frame) {
-      if (!this.finished) {
-        if (current_frame >= (this.start_frame = this.duration)) {
-          if (this.infinite) {
-            this.start_frame = this.current_frame;
-            return this.value = this.start;
-          } else {
-            this.finished = true;
-            return this.value = this.start + this.change;
-          }
+      if (current_frame >= this.start_frame + this.duration) {
+        if (this.infinite) {
+          this.start_frame = current_frame;
+          return this.value = this.start;
+        } else if (this.next != null) {
+          return this.goToNext();
         } else {
-          return this.value = this.func(current_frame - this.start_frame);
+          this.finished = true;
+          return this.value = this.start + this.change;
         }
+      } else {
+        return this.value = this.func(current_frame - this.start_frame);
       }
     };
 
     Ease.prototype.valueOf = function() {
-      if (this.engine.current_frame > this.last_updated) {
+      if (!this.finished && this.engine.current_frame > this.last_updated) {
         this.updateValue(this.engine.current_frame);
         this.last_updated = this.engine.current_frame;
       }
