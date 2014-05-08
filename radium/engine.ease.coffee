@@ -196,4 +196,4 @@ class Ease
 			return -@change / 2 * (Math.sqrt(1 - time * time) - 1) + @start
 		else
 			time = time - 2
-			return @change / 2 * (Math.sqrt(1 - time * time) + 1) + @begin
+			return @change / 2 * (Math.sqrt(1 - time * time) + 1) + @start

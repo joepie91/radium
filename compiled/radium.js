@@ -831,7 +831,7 @@
         return -this.change / 2 * (Math.sqrt(1 - time * time) - 1) + this.start;
       } else {
         time = time - 2;
-        return this.change / 2 * (Math.sqrt(1 - time * time) + 1) + this.begin;
+        return this.change / 2 * (Math.sqrt(1 - time * time) + 1) + this.start;
       }
     };
 
