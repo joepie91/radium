@@ -6,11 +6,11 @@ Engine::timing =
 		else
 			@unnamed_timers.push(timer)
 		
-	stopTimer: (name)
+	stopTimer: (name) =>
 		@timers[name].stop()
 		
 class Timer
-	constructor: (@frames, @callback, @repeat) =>
+	constructor: (@frames, @callback, @repeat) ->
 		@current_frame = 0
 		@finished = false
 		
