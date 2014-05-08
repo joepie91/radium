@@ -9,7 +9,7 @@ Engine::draw =
 	
 	_finishPath: (surface, options) =>
 		if options.stroke ? true
-			surface.lineWidth = options.lineWidth?.value ? options.lineWidth ? options.pen?.lineWidth?.value ? options.pen?.lineWidth ? 1
+			surface.lineWidth = options.lineWidth ? options.pen?.lineWidth ? 1
 			surface.strokeStyle = options.lineColor ? options.pen?.lineColor ? "black"
 			
 			if options._is_text ? false
@@ -33,46 +33,28 @@ Engine::draw =
 	
 	_applyTextContext: (surface, options) =>
 		font_family = options.font ? "sans-serif"
-		font_size = options.size?.value ? options.size ? 16
+		font_size = options.size ? 16
 		font_weight = options.weight ? "normal"
 		font_style = options.style ? "normal"
-		scale = options.scale?.value ? options.scale ? 1
+		scale = options.scale ? 1
 		
 		surface.save()
 		surface.font = "#{font_weight} #{font_style} #{font_size}px '#{font_family}'"
-		surface.globalAlpha = options.alpha?.value ? options.alpha ? 1
+		surface.globalAlpha = options.alpha ? 1
 		surface.scale(scale, scale)
 	
 	line: (x1, y1, x2, y2, options = {}, surface = "") =>
-		# Ease-able properties
-		x1 = x1.value ? x1
-		y1 = y1.value ? y1
-		x2 = x2.value ? x2
-		y2 = y2.value ? y2
-		
 		surface = @_startPath(surface, options)
 		surface.moveTo(x1, y1)
 		surface.lineTo(x2, y2)
 		@_finishPath(surface, options)
 	
 	rectangle: (x1, y1, x2, y2, options = {}, surface = "") =>
-		# Ease-able properties
-		x1 = x1.value ? x1
-		y1 = y1.value ? y1
-		x2 = x2.value ? x2
-		y2 = y2.value ? y2
-		
 		surface = @_startPath(surface, options)
 		surface.rect(x1, y1, x2 - x1, y2 - y1)
 		@_finishPath(surface, options)
 		
 	boxEllipse: (x1, y1, x2, y2, options = {}, surface = "") =>
-		# Ease-able properties
-		x1 = x1.value ? x1
-		y1 = y1.value ? y1
-		x2 = x2.value ? x2
-		y2 = y2.value ? y2
-		
 		x = (x1 + x2) / 2;
 		y = (y1 + y2) / 2;
 		rx = (x2 - x1) / 2;
@@ -80,15 +62,9 @@ Engine::draw =
 		@radiusEllipse(x, y, rx, ry, options, surface)
 		
 	radiusEllipse: (x, y, rx, ry, options = {}, surface = "") =>
-		# Ease-able properties
-		x = x.value ? x
-		y = y.value ? y
-		rx = rx.value ? rx
-		ry = ry.value ? ry
-		
 		surface = @_startPath(surface, options)
 		
-		step = options.step?.value ? options.step ? 0.1
+		step = options.step ? 0.1
 		
 		if rx == ry
 			surface.arc(x, y, rx, 0, 2 * Math.PI, false)
@@ -107,13 +83,9 @@ Engine::draw =
 		pass # TODO
 		
 	text: (x, y, text, options = {}, surface = "") =>
-		# Ease-able properties
-		x = x.value ? x
-		y = y.value ? y
-		
 		# Defaults
 		options.alignment ?= "left"
-		options.scale = options.scale?.value ? options.scale ? 1
+		options.scale ?= 1
 		options._is_text = true
 		options.text = text
 		options.y = y
