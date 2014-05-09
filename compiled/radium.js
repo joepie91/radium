@@ -247,7 +247,7 @@
   })();
 
   Engine.prototype.ease = {
-    _calculateElasticValues: function(amplitude, period, change, inout) {
+    _calculateElasticValues: function(duration, amplitude, period, change, inout) {
       var overshoot;
       if (inout == null) {
         inout = false;
@@ -322,7 +322,6 @@
       if (invert_repeat == null) {
         invert_repeat = false;
       }
-      console.log("this", this.engine);
       return new Ease(this.engine, "bounceOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
     },
     bounceIn: function(start, end, duration, next, infinite, invert_repeat) {
@@ -438,7 +437,7 @@
       if (period == null) {
         period = null;
       }
-      _ref = this._calculateElasticValues(amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
+      _ref = this._calculateElasticValues(duration, amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
       end = start + change;
       return new Ease(this.engine, "elasticOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot);
     },
@@ -459,7 +458,7 @@
       if (period == null) {
         period = null;
       }
-      _ref = this._calculateElasticValues(amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
+      _ref = this._calculateElasticValues(duration, amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
       end = start + change;
       return new Ease(this.engine, "elasticIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot);
     },
@@ -480,7 +479,7 @@
       if (period == null) {
         period = null;
       }
-      _ref = this._calculateElasticValues(amplitude, period, end - start, true), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
+      _ref = this._calculateElasticValues(duration, amplitude, period, end - start, true), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
       end = start + change;
       return new Ease(this.engine, "elasticInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot);
     },
@@ -852,7 +851,7 @@
     };
 
     Ease.prototype.cubicInOut = function(time) {
-      time = time / (duration / 2);
+      time = time / (this.duration / 2);
       if (time < 1) {
         return change / 2 * time * time * time + this.start;
       } else {
@@ -863,7 +862,7 @@
 
     Ease.prototype.elasticOut = function(time) {
       var amplitude, overshoot, period;
-      time = time / duration;
+      time = time / this.duration;
       amplitude = this.params[0];
       period = this.params[1];
       overshoot = this.params[2];
@@ -872,7 +871,7 @@
 
     Ease.prototype.elasticIn = function(time) {
       var amplitude, overshoot, period;
-      time = time / duration;
+      time = time / this.duration;
       amplitude = this.params[0];
       period = this.params[1];
       overshoot = this.params[2];
@@ -881,7 +880,7 @@
 
     Ease.prototype.elasticInOut = function(time) {
       var amplitude, overshoot, period;
-      time = time / (duration / 2) - 1;
+      time = time / (this.duration / 2) - 1;
       amplitude = this.params[0];
       period = this.params[1];
       overshoot = this.params[2];
