@@ -257,3 +257,19 @@ class Ease
 	linearNone: (time) =>
 		return @change * time / @duration + @start
 
+	quadIn: (time) =>
+		time = time / @duration
+		return @change * time * time + @start
+
+	quadOut: (time) =>
+		time = time / @duration
+		return -@change * time * (time - 2) + @start
+
+	quadInOut: (time) =>
+		time = time / (@duration / 2)
+
+		if time < 1
+			return @change / 2 * time * time + @start
+		else
+			time = time - 1
+			return -@change / 2 * (time * (time - 2) - 1) + @start

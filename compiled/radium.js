@@ -690,6 +690,9 @@
       this.invert_repeat = invert_repeat;
       this.next = next;
       this.params = params;
+      this.quadInOut = __bind(this.quadInOut, this);
+      this.quadOut = __bind(this.quadOut, this);
+      this.quadIn = __bind(this.quadIn, this);
       this.linearNone = __bind(this.linearNone, this);
       this.expoInOut = __bind(this.expoInOut, this);
       this.expoOut = __bind(this.expoOut, this);
@@ -914,6 +917,26 @@
 
     Ease.prototype.linearNone = function(time) {
       return this.change * time / this.duration + this.start;
+    };
+
+    Ease.prototype.quadIn = function(time) {
+      time = time / this.duration;
+      return this.change * time * time + this.start;
+    };
+
+    Ease.prototype.quadOut = function(time) {
+      time = time / this.duration;
+      return -this.change * time * (time - 2) + this.start;
+    };
+
+    Ease.prototype.quadInOut = function(time) {
+      time = time / (this.duration / 2);
+      if (time < 1) {
+        return this.change / 2 * time * time + this.start;
+      } else {
+        time = time - 1;
+        return -this.change / 2 * (time * (time - 2) - 1) + this.start;
+      }
     };
 
     return Ease;
