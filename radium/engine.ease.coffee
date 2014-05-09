@@ -254,3 +254,6 @@ class Ease
 		else
 			return @change / 2 * (-Math.pow(2, -10 * (time - 1)) + 2) + @start
 
+	linearNone: (time) =>
+		return @change * time / @duration + @start
+

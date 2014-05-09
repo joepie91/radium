@@ -690,6 +690,7 @@
       this.invert_repeat = invert_repeat;
       this.next = next;
       this.params = params;
+      this.linearNone = __bind(this.linearNone, this);
       this.expoInOut = __bind(this.expoInOut, this);
       this.expoOut = __bind(this.expoOut, this);
       this.expoIn = __bind(this.expoIn, this);
@@ -909,6 +910,10 @@
       } else {
         return this.change / 2 * (-Math.pow(2, -10 * (time - 1)) + 2) + this.start;
       }
+    };
+
+    Ease.prototype.linearNone = function(time) {
+      return this.change * time / this.duration + this.start;
     };
 
     return Ease;
