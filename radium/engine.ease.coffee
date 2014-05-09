@@ -239,3 +239,18 @@ class Ease
 			return -0.5 * (amplitude * Math.pow(2, -10 * time)) * Math.sin((time * @duration - overshoot) * ((2 * Math.PI) / period)) + @start
 		else
 			return amplitude * Math.pow(2, -10 * time) * Math.sin((time * @duration - overshoot) * (2 * Math.PI) / period) + @change + @start
+
+	expoIn: (time) =>
+		return @change * Math.pow(2, 10 * (time / @duration - 1)) + @start
+
+	expoOut: (time) =>
+		return @change * (-Math.pow(2, -10 * time / @duration) + 1) + @start
+
+	expoInOut: (time) =>
+		time = time / (@duration / 2)
+
+		if time < 1
+			return @change  / 2 * Math.pow(2, 10 * (time - 1)) + @start
+		else
+			return @change / 2 * (-Math.pow(2, -10 * (time - 1)) + 2) + @start
+

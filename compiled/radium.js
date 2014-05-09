@@ -690,6 +690,9 @@
       this.invert_repeat = invert_repeat;
       this.next = next;
       this.params = params;
+      this.expoInOut = __bind(this.expoInOut, this);
+      this.expoOut = __bind(this.expoOut, this);
+      this.expoIn = __bind(this.expoIn, this);
       this.elasticInOut = __bind(this.elasticInOut, this);
       this.elasticIn = __bind(this.elasticIn, this);
       this.elasticOut = __bind(this.elasticOut, this);
@@ -888,6 +891,23 @@
         return -0.5 * (amplitude * Math.pow(2, -10 * time)) * Math.sin((time * this.duration - overshoot) * ((2 * Math.PI) / period)) + this.start;
       } else {
         return amplitude * Math.pow(2, -10 * time) * Math.sin((time * this.duration - overshoot) * (2 * Math.PI) / period) + this.change + this.start;
+      }
+    };
+
+    Ease.prototype.expoIn = function(time) {
+      return this.change * Math.pow(2, 10 * (time / this.duration - 1)) + this.start;
+    };
+
+    Ease.prototype.expoOut = function(time) {
+      return this.change * (-Math.pow(2, -10 * time / this.duration) + 1) + this.start;
+    };
+
+    Ease.prototype.expoInOut = function(time) {
+      time = time / (this.duration / 2);
+      if (time < 1) {
+        return this.change / 2 * Math.pow(2, 10 * (time - 1)) + this.start;
+      } else {
+        return this.change / 2 * (-Math.pow(2, -10 * (time - 1)) + 2) + this.start;
       }
     };
 
