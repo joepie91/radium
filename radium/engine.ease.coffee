@@ -12,7 +12,7 @@ Engine::ease =
 		else
 			overshoot = period / (2 * Math.PI) * Math.asin(change / amplitude)
 		
-		return [amplitude, period, change]
+		return [amplitude, period, change, overshoot]
 			
 	backIn: (start, end, duration, next = null, infinite = false , invert_repeat = false, overshoot = 1.70158) ->
 		return new Ease(this.engine, "backIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next, overshoot)
@@ -40,17 +40,17 @@ Engine::ease =
 	cubicInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
 		return new Ease(this.engine, "cubicInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
 	elasticOut: (start, end, duration, next = null, infinite = false , invert_repeat = false, amplitude = null, period = null) ->
-		[amplitude, period, change] = @_calculateElasticValues(amplitude, period, end - start)
+		[amplitude, period, change, overshoot] = @_calculateElasticValues(amplitude, period, end - start)
 		end = start + change
-		return new Ease(this.engine, "elasticOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+		return new Ease(this.engine, "elasticOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot)
 	elasticIn: (start, end, duration, next = null, infinite = false , invert_repeat = false, amplitude = null, period = null) ->
-		[amplitude, period, change] = @_calculateElasticValues(amplitude, period, end - start)
+		[amplitude, period, change, overshoot] = @_calculateElasticValues(amplitude, period, end - start)
 		end = start + change
-		return new Ease(this.engine, "elasticIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+		return new Ease(this.engine, "elasticIn", infinite, start, end, @engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot)
 	elasticInOut: (start, end, duration, next = null, infinite = false , invert_repeat = false, amplitude = null, period = null) ->
-		[amplitude, period, change] = @_calculateElasticValues(amplitude, period, end - start, true)
+		[amplitude, period, change, overshoot] = @_calculateElasticValues(amplitude, period, end - start, true)
 		end = start + change
-		return new Ease(this.engine, "elasticInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
+		return new Ease(this.engine, "elasticInOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot)
 	expoOut: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
 		return new Ease(this.engine, "expoOut", infinite, start, end, @engine.current_frame, duration, invert_repeat, next)
 	expoIn: (start, end, duration, next = null, infinite = false , invert_repeat = false) ->
@@ -213,3 +213,30 @@ class Ease
 		else
 			time = time - 2
 			return change / 2 * (time * time * time + 2) + begin
+
+	elasticOut: (time) =>
+		time = time / duration
+		amplitude = @params[0]
+		period = @params[1]
+		overshoot = @params[2]
+
+		return (amplitude * Math.pow(2, -10 * time)) * Math.sin((time * @duration - overshoot) * (2 * Math.PI) / period) + @change + @start
+
+	elasticIn: (time) =>
+		time = time / duration
+		amplitude = @params[0]
+		period = @params[1]
+		overshoot = @params[2]
+
+		return -(amplitude * Math.pow(2, -10 * time)) * Math.sin((time * @duration - overshoot) * (2 * Math.PI) / period) + @start
+
+	elasticInOut: (time) =>
+		time = time / (duration / 2) - 1
+		amplitude = @params[0]
+		period = @params[1]
+		overshoot = @params[2]
+
+		if time < 1
+			return -0.5 * (amplitude * Math.pow(2, -10 * time)) * Math.sin((time * @duration - overshoot) * ((2 * Math.PI) / period)) + @start
+		else
+			return amplitude * Math.pow(2, -10 * time) * Math.sin((time * @duration - overshoot) * (2 * Math.PI) / period) + @change + @start
