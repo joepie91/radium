@@ -58,7 +58,7 @@
         });
       };
       diamond.onMouseOver = function() {
-        this.fade_value = this.engine.ease.circOut(0, 1, 10, this.engine.ease.bounceOut(1, 0, 35));
+        this.fade_value = this.engine.ease.quadInOut(0, 1, 10, this.engine.ease.bounceOut(1, 0, 35));
         cursor = this.engine.getObject("cursor").getInstances()[0];
         cursor.x = this.engine.ease.quadInOut(cursor.x, this.x - 9, 8);
         return cursor.y = this.engine.ease.quadInOut(cursor.y, this.y - 9, 8);
