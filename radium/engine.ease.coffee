@@ -104,6 +104,7 @@ class Ease
 		@value = @next.value
 		@start_frame = @last_updated = @engine.current_frame
 		@infinite = @next.infinite
+		@end = @next.end
 		@start = @next.start
 		@change = @next.change
 		@invert_repeat = @next.invert_repeat

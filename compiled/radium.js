@@ -916,6 +916,7 @@
       this.value = this.next.value;
       this.start_frame = this.last_updated = this.engine.current_frame;
       this.infinite = this.next.infinite;
+      this.end = this.next.end;
       this.start = this.next.start;
       this.change = this.next.change;
       this.invert_repeat = this.next.invert_repeat;
