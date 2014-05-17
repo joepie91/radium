@@ -22,36 +22,30 @@ class Scene
 		)
 
 		$(surface).on("click.radium", (event) =>
-			@handleClick(event)
+			@handleClick("click", event)
 		)
 
 		$(surface).on("mouseup.radium", (event) =>
-			@handleMouseUp(event)
+			@handleClick("mouse_up", event)
 		)
 
 		$(surface).on("mousedown.radium", (event) =>
-			@handleMouseDown(event)
+			@handleClick("mouse_down", event)
 		)
 
 		@checkActive()
 		
-	handleClick: (event) =>
+	handleClick: (event_name, event) =>
 		for id, instance of @instances
-			instance.callEvent("click_global", {x: @mouse_x, y: @mouse_y, button: event.which})
+			instance.callEvent("#{event_name}_global", {x: @mouse_x, y: @mouse_y, button: event.which})
 
 			if instance.checkPointCollision(@mouse_x, @mouse_y)
-				instance.callEvent("click", {x: @mouse_x, y: @mouse_y, button: event.which})
+				instance.callEvent(event_name, {x: @mouse_x, y: @mouse_y, button: event.which})
 
 		# Prevent default browser events from occurring on eg. right or middle click
 		event.preventDefault()
 		event.stopPropagation()
 		return false
-
-	handleMouseUp: (event) =>
-		pass
-
-	handleMouseDown: (event) =>
-		pass
 
 	removeTargetSurface: (surface) =>
 		@surfaces = @surfaces.filter (obj) -> obj isnt surface

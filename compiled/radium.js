@@ -1453,8 +1453,6 @@
       this.iteration = __bind(this.iteration, this);
       this.checkActive = __bind(this.checkActive, this);
       this.removeTargetSurface = __bind(this.removeTargetSurface, this);
-      this.handleMouseDown = __bind(this.handleMouseDown, this);
-      this.handleMouseUp = __bind(this.handleMouseUp, this);
       this.handleClick = __bind(this.handleClick, this);
       this.addTargetSurface = __bind(this.addTargetSurface, this);
       this.instances = {};
@@ -1482,34 +1480,34 @@
       })(this));
       $(surface).on("click.radium", (function(_this) {
         return function(event) {
-          return _this.handleClick(event);
+          return _this.handleClick("click", event);
         };
       })(this));
       $(surface).on("mouseup.radium", (function(_this) {
         return function(event) {
-          return _this.handleMouseUp(event);
+          return _this.handleClick("mouse_up", event);
         };
       })(this));
       $(surface).on("mousedown.radium", (function(_this) {
         return function(event) {
-          return _this.handleMouseDown(event);
+          return _this.handleClick("mouse_down", event);
         };
       })(this));
       return this.checkActive();
     };
 
-    Scene.prototype.handleClick = function(event) {
+    Scene.prototype.handleClick = function(event_name, event) {
       var id, instance, _ref;
       _ref = this.instances;
       for (id in _ref) {
         instance = _ref[id];
-        instance.callEvent("click_global", {
+        instance.callEvent("" + event_name + "_global", {
           x: this.mouse_x,
           y: this.mouse_y,
           button: event.which
         });
         if (instance.checkPointCollision(this.mouse_x, this.mouse_y)) {
-          instance.callEvent("click", {
+          instance.callEvent(event_name, {
             x: this.mouse_x,
             y: this.mouse_y,
             button: event.which
@@ -1519,14 +1517,6 @@
       event.preventDefault();
       event.stopPropagation();
       return false;
-    };
-
-    Scene.prototype.handleMouseUp = function(event) {
-      return pass;
-    };
-
-    Scene.prototype.handleMouseDown = function(event) {
-      return pass;
     };
 
     Scene.prototype.removeTargetSurface = function(surface) {
