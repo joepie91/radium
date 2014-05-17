@@ -80,8 +80,8 @@ $(->
 			@fade_value = @engine.ease.circOut(0, 1, 10, @engine.ease.bounceOut(1, 0, 35))
 			
 			cursor = @engine.getObject("cursor").getInstances()[0]
-			cursor.x = @x - 9
-			cursor.y = @y - 9
+			cursor.x = @engine.ease.quadInOut(cursor.x, @x - 9, 8)
+			cursor.y = @engine.ease.quadInOut(cursor.y, @y - 9, 8)
 		
 		for x in [10 .. 728] by 80
 			for y in [10 .. 550] by 80

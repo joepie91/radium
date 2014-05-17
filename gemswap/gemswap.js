@@ -60,8 +60,8 @@
       diamond.onMouseOver = function() {
         this.fade_value = this.engine.ease.circOut(0, 1, 10, this.engine.ease.bounceOut(1, 0, 35));
         cursor = this.engine.getObject("cursor").getInstances()[0];
-        cursor.x = this.x - 9;
-        return cursor.y = this.y - 9;
+        cursor.x = this.engine.ease.quadInOut(cursor.x, this.x - 9, 8);
+        return cursor.y = this.engine.ease.quadInOut(cursor.y, this.y - 9, 8);
       };
       for (x = _i = 10; _i <= 728; x = _i += 80) {
         for (y = _j = 10; _j <= 550; y = _j += 80) {
