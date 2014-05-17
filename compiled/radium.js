@@ -246,6 +246,193 @@
 
   })();
 
+  Engine.prototype.draw = {
+    _startPath: (function(_this) {
+      return function(surface, options) {
+        var _ref;
+        surface = _this.getSurface(surface);
+        if ((_ref = !options._is_text) != null ? _ref : false) {
+          surface.beginPath();
+        }
+        return surface;
+      };
+    })(this),
+    _finishPath: (function(_this) {
+      return function(surface, options) {
+        var _ref, _ref1, _ref10, _ref11, _ref12, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+        if ((_ref = options.stroke) != null ? _ref : true) {
+          surface.lineWidth = (_ref1 = (_ref2 = options.lineWidth) != null ? _ref2 : (_ref3 = options.pen) != null ? _ref3.lineWidth : void 0) != null ? _ref1 : 1;
+          surface.strokeStyle = (_ref4 = (_ref5 = options.lineColor) != null ? _ref5 : (_ref6 = options.pen) != null ? _ref6.lineColor : void 0) != null ? _ref4 : "black";
+          if ((_ref7 = options._is_text) != null ? _ref7 : false) {
+            surface.strokeText(options.text, options.x, options.y);
+          } else {
+            surface.stroke();
+          }
+        }
+        if ((_ref8 = options.fill) != null ? _ref8 : false) {
+          surface.fillStyle = (_ref9 = (_ref10 = options.fillColor) != null ? _ref10 : (_ref11 = options.pen) != null ? _ref11.fillColor : void 0) != null ? _ref9 : "white";
+          if ((_ref12 = options._is_text) != null ? _ref12 : false) {
+            return surface.fillText(options.text, options.x, options.y);
+          } else {
+            return surface.fill();
+          }
+        }
+      };
+    })(this),
+    _getTextWidth: (function(_this) {
+      return function(surface, text, options) {
+        var width;
+        _this._applyTextContext(surface, options);
+        width = surface.measureText(text).width;
+        surface.restore();
+        return width;
+      };
+    })(this),
+    _applyTextContext: (function(_this) {
+      return function(surface, options) {
+        var font_family, font_size, font_style, font_weight, scale, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+        font_family = (_ref = options.font) != null ? _ref : "sans-serif";
+        font_size = (_ref1 = options.size) != null ? _ref1 : 16;
+        font_weight = (_ref2 = options.weight) != null ? _ref2 : "normal";
+        font_style = (_ref3 = options.style) != null ? _ref3 : "normal";
+        scale = (_ref4 = options.scale) != null ? _ref4 : 1;
+        surface.save();
+        surface.font = "" + font_weight + " " + font_style + " " + font_size + "px '" + font_family + "'";
+        surface.globalAlpha = (_ref5 = options.alpha) != null ? _ref5 : 1;
+        return surface.scale(scale, scale);
+      };
+    })(this),
+    line: (function(_this) {
+      return function(x1, y1, x2, y2, options, surface) {
+        if (options == null) {
+          options = {};
+        }
+        if (surface == null) {
+          surface = "";
+        }
+        surface = _this._startPath(surface, options);
+        surface.moveTo(x1, y1);
+        surface.lineTo(x2, y2);
+        return _this._finishPath(surface, options);
+      };
+    })(this),
+    rectangle: (function(_this) {
+      return function(x1, y1, x2, y2, options, surface) {
+        if (options == null) {
+          options = {};
+        }
+        if (surface == null) {
+          surface = "";
+        }
+        surface = _this._startPath(surface, options);
+        surface.rect(x1, y1, x2 - x1, y2 - y1);
+        return _this._finishPath(surface, options);
+      };
+    })(this),
+    boxEllipse: (function(_this) {
+      return function(x1, y1, x2, y2, options, surface) {
+        var rx, ry, x, y;
+        if (options == null) {
+          options = {};
+        }
+        if (surface == null) {
+          surface = "";
+        }
+        x = (x1 + x2) / 2;
+        y = (y1 + y2) / 2;
+        rx = (x2 - x1) / 2;
+        ry = (y2 - y1) / 2;
+        return _this.radiusEllipse(x, y, rx, ry, options, surface);
+      };
+    })(this),
+    radiusEllipse: (function(_this) {
+      return function(x, y, rx, ry, options, surface) {
+        var i, step, _i, _ref, _ref1;
+        if (options == null) {
+          options = {};
+        }
+        if (surface == null) {
+          surface = "";
+        }
+        surface = _this._startPath(surface, options);
+        step = (_ref = options.step) != null ? _ref : 0.1;
+        if (rx === ry) {
+          surface.arc(x, y, rx, 0, 2 * Math.PI, false);
+        } else {
+          surface.moveTo(x + rx, y);
+          for (i = _i = 0, _ref1 = Math.PI * 2 + step; 0 <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+            surface.lineTo(x + (Math.cos(i) * rx), y + (Math.sin(i) * ry));
+          }
+        }
+        return _this._finishPath(surface, options);
+      };
+    })(this),
+    boxPolygon: (function(_this) {
+      return function(x1, y1, x2, y2, sides, options, surface) {
+        if (options == null) {
+          options = {};
+        }
+        if (surface == null) {
+          surface = "";
+        }
+        return pass;
+      };
+    })(this),
+    radiusPolygon: (function(_this) {
+      return function(x, y, r, sides, options, surface) {
+        if (options == null) {
+          options = {};
+        }
+        if (surface == null) {
+          surface = "";
+        }
+        return pass;
+      };
+    })(this),
+    text: (function(_this) {
+      return function(x, y, text, options, surface) {
+        var text_width;
+        if (options == null) {
+          options = {};
+        }
+        if (surface == null) {
+          surface = "";
+        }
+        if (options.alignment == null) {
+          options.alignment = "left";
+        }
+        if (options.scale == null) {
+          options.scale = 1;
+        }
+        options._is_text = true;
+        options.text = text;
+        options.y = y;
+        if (options.fill == null) {
+          options.fill = true;
+        }
+        if (options.fillColor == null) {
+          options.fillColor = "black";
+        }
+        if (options.stroke == null) {
+          options.stroke = false;
+        }
+        if (alignment === "left") {
+          options.x = x;
+        } else {
+          text_width = _this._getTextWidth(text, options);
+          if (alignment === "center") {
+            options.x = x - ((text_width / 2) * scale * scale);
+          } else if (alignment === "right") {
+            options.x = x - text_width;
+          }
+        }
+        _this._startPath(surface, options);
+        _this._finishPath(surface, options);
+        return surface.restore();
+      };
+    })(this)
+  };
+
   Engine.prototype.ease = {
     _calculateElasticValues: function(duration, amplitude, period, change, inout) {
       var overshoot;
@@ -1057,7 +1244,9 @@
         mouseover: this.onMouseOver,
         mouseout: this.onMouseOut,
         create: this.onCreate,
-        step: this.onStep
+        step: this.onStep,
+        click: this.onClick,
+        click_global: this.onClickGlobal
       };
       switch (name) {
         case "draw":
@@ -1261,6 +1450,9 @@
       this.iteration = __bind(this.iteration, this);
       this.checkActive = __bind(this.checkActive, this);
       this.removeTargetSurface = __bind(this.removeTargetSurface, this);
+      this.handleMouseDown = __bind(this.handleMouseDown, this);
+      this.handleMouseUp = __bind(this.handleMouseUp, this);
+      this.handleClick = __bind(this.handleClick, this);
       this.addTargetSurface = __bind(this.addTargetSurface, this);
       this.instances = {};
       this.surfaces = [];
@@ -1285,7 +1477,53 @@
           return _this.checkMouseCollisions();
         };
       })(this));
+      $(surface).on("click.radium", (function(_this) {
+        return function(event) {
+          return _this.handleClick(event);
+        };
+      })(this));
+      $(surface).on("mouseup.radium", (function(_this) {
+        return function(event) {
+          return _this.handleMouseUp(event);
+        };
+      })(this));
+      $(surface).on("mousedown.radium", (function(_this) {
+        return function(event) {
+          return _this.handleMouseDown(event);
+        };
+      })(this));
       return this.checkActive();
+    };
+
+    Scene.prototype.handleClick = function(event) {
+      var id, instance, _ref;
+      _ref = this.instances;
+      for (id in _ref) {
+        instance = _ref[id];
+        instance.callEvent("click_global", {
+          x: this.mouse_x,
+          y: this.mouse_y,
+          button: event.which
+        });
+        if (instance.checkPointCollision(this.mouse_x, this.mouse_y)) {
+          instance.callEvent("click", {
+            x: this.mouse_x,
+            y: this.mouse_y,
+            button: event.which
+          });
+        }
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      return false;
+    };
+
+    Scene.prototype.handleMouseUp = function(event) {
+      return pass;
+    };
+
+    Scene.prototype.handleMouseDown = function(event) {
+      return pass;
     };
 
     Scene.prototype.removeTargetSurface = function(surface) {

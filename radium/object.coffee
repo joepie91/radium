@@ -15,6 +15,8 @@ class Object
 			mouseout: @onMouseOut
 			create: @onCreate
 			step: @onStep
+			click: @onClick
+			click_global: @onClickGlobal
 		
 		switch name
 			when "draw"

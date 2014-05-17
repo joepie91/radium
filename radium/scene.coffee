@@ -13,14 +13,46 @@ class Scene
 	addTargetSurface: (surface) =>
 		@surfaces.push(surface)
 		@engine.updateCanvasSize(surface, @width, @height)
+
 		$(surface).on("mousemove.radium", (event) =>
 			canvas_pos = surface.getBoundingClientRect()
 			@mouse_x = (event.clientX - canvas_pos.left) | 0
 			@mouse_y = (event.clientY - canvas_pos.top) | 0
 			@checkMouseCollisions()
 		)
+
+		$(surface).on("click.radium", (event) =>
+			@handleClick(event)
+		)
+
+		$(surface).on("mouseup.radium", (event) =>
+			@handleMouseUp(event)
+		)
+
+		$(surface).on("mousedown.radium", (event) =>
+			@handleMouseDown(event)
+		)
+
 		@checkActive()
 		
+	handleClick: (event) =>
+		for id, instance of @instances
+			instance.callEvent("click_global", {x: @mouse_x, y: @mouse_y, button: event.which})
+
+			if instance.checkPointCollision(@mouse_x, @mouse_y)
+				instance.callEvent("click", {x: @mouse_x, y: @mouse_y, button: event.which})
+
+		# Prevent default browser events from occurring on eg. right or middle click
+		event.preventDefault()
+		event.stopPropagation()
+		return false
+
+	handleMouseUp: (event) =>
+		pass
+
+	handleMouseDown: (event) =>
+		pass
+
 	removeTargetSurface: (surface) =>
 		@surfaces = @surfaces.filter (obj) -> obj isnt surface
 		$(surface).off("mousemove.radium")

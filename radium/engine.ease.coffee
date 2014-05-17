@@ -273,3 +273,5 @@ class Ease
 		else
 			time = time - 1
 			return -@change / 2 * (time * (time - 2) - 1) + @start
+
+
