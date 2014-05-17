@@ -15,8 +15,8 @@
       cursor = engine.createObject("cursor");
       cursor.sprite = engine.getSprite("cursor");
       cursor.onClickGlobal = function(event) {
-        this.x = this.engine.ease.quadInOut(this.x, event.x - 41, 15);
-        return this.y = this.engine.ease.quadInOut(this.y, event.y - 41, 15);
+        this.x = this.engine.ease.quadInOut(this.x, event.x - 41, 35);
+        return this.y = this.engine.ease.quadInOut(this.y, event.y - 41, 35);
       };
       cursor.onStep = function() {
         return true;

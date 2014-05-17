@@ -86,9 +86,9 @@ Engine::ease =
 	
 class Ease
 	# Port based on https://github.com/jimjeffers/Easie. I don't think this qualifies as a "bad thing" :)
-	constructor: (@engine, @type, @infinite, @start, end, @start_frame, @duration, @invert_repeat, @next, @params...) ->
+	constructor: (@engine, @type, @infinite, @start, @end, @start_frame, @duration, @invert_repeat, @next, @params...) ->
 		@func = this[@type]
-		@change = end - @start
+		@change = @end - @start
 		@value = @start
 		@last_updated = @start_frame
 		@finished = false
@@ -113,6 +113,12 @@ class Ease
 		@next = @next.next
 		
 	updateValue: (current_frame) =>
+		# We recalculate here, to deal with 'stacked' easings. If we don't do this, letting multiple
+		# easings operate on each other will result in the final value being different from 'end',
+		# because the change was calculated once based on the value of the previous easing *at that
+		# moment*, rather than the actual value.
+		@change = @end - @start
+
 		if current_frame >= @start_frame + @duration
 			if @infinite
 				@start_frame = current_frame

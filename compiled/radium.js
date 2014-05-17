@@ -872,6 +872,7 @@
       this.type = type;
       this.infinite = infinite;
       this.start = start;
+      this.end = end;
       this.start_frame = start_frame;
       this.duration = duration;
       this.invert_repeat = invert_repeat;
@@ -903,7 +904,7 @@
       this.updateValue = __bind(this.updateValue, this);
       this.goToNext = __bind(this.goToNext, this);
       this.func = this[this.type];
-      this.change = end - this.start;
+      this.change = this.end - this.start;
       this.value = this.start;
       this.last_updated = this.start_frame;
       this.finished = false;
@@ -925,6 +926,7 @@
     };
 
     Ease.prototype.updateValue = function(current_frame) {
+      this.change = this.end - this.start;
       if (current_frame >= this.start_frame + this.duration) {
         if (this.infinite) {
           this.start_frame = current_frame;

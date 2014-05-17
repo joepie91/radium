@@ -20,8 +20,8 @@ $(->
 		cursor.sprite = engine.getSprite("cursor")
 
 		cursor.onClickGlobal = (event) ->
-			@x = @engine.ease.quadInOut(@x, event.x - 41, 15)
-			@y = @engine.ease.quadInOut(@y, event.y - 41, 15)
+			@x = @engine.ease.quadInOut(@x, event.x - 41, 35)
+			@y = @engine.ease.quadInOut(@y, event.y - 41, 35)
 
 		cursor.onStep = ->
 			return true
