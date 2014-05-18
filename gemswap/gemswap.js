@@ -39,7 +39,7 @@
     diamond.sprite = engine.getSprite("diamond");
     diamond.draw_sprite = false;
     diamond.onCreate = function() {
-      this.fade_value = 0;
+      this.fade_value = 0.3;
       this.shimmer_value = this.engine.ease.circInOut(0, 0.8, engine.random.number(200, 350), null, true, true);
       return this.gem_type = this.engine.random.pick("diamond", "yellow", "blue");
     };
@@ -56,7 +56,7 @@
       });
     };
     diamond.onMouseOver = function() {
-      this.fade_value = this.engine.ease.quadInOut(0, 1, 10, this.engine.ease.bounceOut(1, 0, 35));
+      this.fade_value = this.engine.ease.quadInOut(0.3, 0.7, 10, this.engine.ease.bounceOut(0.7, 0.3, 65));
       cursor = this.engine.getObject("cursor").getInstances()[0];
       cursor.x = this.engine.ease.quadInOut(cursor.x, this.x - 9, 8);
       return cursor.y = this.engine.ease.quadInOut(cursor.y, this.y - 9, 8);

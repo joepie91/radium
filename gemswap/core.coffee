@@ -58,7 +58,7 @@ $(->
 		diamond.draw_sprite = false
 		
 		diamond.onCreate = ->
-			@fade_value = 0
+			@fade_value = 0.3
 			@shimmer_value = @engine.ease.circInOut(0, 0.8, engine.random.number(200, 350), null, true, true)
 			@gem_type = @engine.random.pick("diamond", "yellow", "blue")
 		
@@ -77,7 +77,7 @@ $(->
 			})
 		
 		diamond.onMouseOver = ->
-			@fade_value = @engine.ease.quadInOut(0, 1, 10, @engine.ease.bounceOut(1, 0, 35))
+			@fade_value = @engine.ease.quadInOut(0.3, 0.7, 10, @engine.ease.bounceOut(0.7, 0.3, 65))
 			
 			cursor = @engine.getObject("cursor").getInstances()[0]
 			cursor.x = @engine.ease.quadInOut(cursor.x, @x - 9, 8)
