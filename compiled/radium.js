@@ -16,6 +16,7 @@ Engine = (function() {
     this.getObject = __bind(this.getObject, this);
     this.getScene = __bind(this.getScene, this);
     this.createTileset = __bind(this.createTileset, this);
+    this.createSprites = __bind(this.createSprites, this);
     this.createSprite = __bind(this.createSprite, this);
     this.createSound = __bind(this.createSound, this);
     this.createObject = __bind(this.createObject, this);
@@ -195,8 +196,17 @@ Engine = (function() {
   };
 
   Engine.prototype.createSprite = function(name, image) {
-    console.log("gget", this.resource_manager.getImage(image));
     return this.sprites[name] = new Sprite(this, name, this.resource_manager.getImage(image));
+  };
+
+  Engine.prototype.createSprites = function(sprites) {
+    var image, name, _results;
+    _results = [];
+    for (name in sprites) {
+      image = sprites[name];
+      _results.push(this.createSprite(name, image));
+    }
+    return _results;
   };
 
   Engine.prototype.createTileset = function(name, image, tile_width, tile_height) {

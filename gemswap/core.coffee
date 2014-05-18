@@ -39,19 +39,18 @@ $(->
 		
 		manager.load ->
 			# Game asset initialization...
-			engine.createSprite("cursor", "images/cursor.png")
-
-			engine.createSprite("diamond", "images/diamond.png")
-			engine.createSprite("diamond_inverted", "images/diamond_inverted.png")
-			engine.createSprite("diamond_shimmer", "images/diamond_shimmer.png")
-
-			engine.createSprite("yellow", "images/yellow.png")
-			engine.createSprite("yellow_inverted", "images/yellow_inverted.png")
-			engine.createSprite("yellow_shimmer", "images/yellow_shimmer.png")
-
-			engine.createSprite("blue", "images/blue.png")
-			engine.createSprite("blue_inverted", "images/blue_inverted.png")
-			engine.createSprite("blue_shimmer", "images/blue_shimmer.png")
+			engine.createSprites({
+				"cursor": "images/cursor.png",
+				"diamond": "images/diamond.png",
+				"diamond_inverted": "images/diamond_inverted.png",
+				"diamond_shimmer": "images/diamond_shimmer.png",
+				"yellow": "images/yellow.png",
+				"yellow_inverted": "images/yellow_inverted.png",
+				"yellow_shimmer": "images/yellow_shimmer.png",
+				"blue": "images/blue.png",
+				"blue_inverted": "images/blue_inverted.png",
+				"blue_shimmer": "images/blue_shimmer.png",
+			})
 			
 			# Object definitions
 			loader = engine.createObject("loader")

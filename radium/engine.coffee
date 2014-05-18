@@ -115,8 +115,11 @@ class Engine
 		@sounds[name] = new Sound(this, name, @resource_manager.getSound(sound))
 		
 	createSprite: (name, image) =>
-		console.log("gget", @resource_manager.getImage(image))
 		@sprites[name] = new Sprite(this, name, @resource_manager.getImage(image))
+		
+	createSprites: (sprites) =>
+		for name, image of sprites
+			@createSprite(name, image)
 		
 	createTileset: (name, image, tile_width, tile_height) =>
 		@tilesets[name] = new Tileset(this, name, @resource_manager.getImage(image), tile_width, tile_height)
