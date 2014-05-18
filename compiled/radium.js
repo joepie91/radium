@@ -1334,7 +1334,8 @@ ResourceManager = (function() {
     this.base_path = base_path != null ? base_path : "";
     this.load = __bind(this.load, this);
     this.prepare = __bind(this.prepare, this);
-    this.do_preload = __bind(this.do_preload, this);
+    this.doPreload = __bind(this.doPreload, this);
+    this.handleFinishedFile = __bind(this.handleFinishedFile, this);
     this.updateProgress = __bind(this.updateProgress, this);
     this.getImage = __bind(this.getImage, this);
     this.addDataFiles = __bind(this.addDataFiles, this);
@@ -1348,24 +1349,32 @@ ResourceManager = (function() {
     this.joinPath = __bind(this.joinPath, this);
     this.resources = {
       stage1_images: [],
-      stage1_audio: [],
+      stage1_sounds: [],
       stage1_scripts: [],
+      stage1_data: [],
       images: [],
-      audio: [],
-      scripts: []
+      sounds: [],
+      scripts: [],
+      data: []
     };
     this.resource_objects = {
       images: {},
-      audio: {},
-      scripts: {}
+      sounds: {},
+      scripts: {},
+      data: {}
     };
+    this.base_path = util.stripRight(this.base_path, "/") + "/";
+    this.files_loaded = 0;
+    this.files_total = 0;
+    this.total_progress = 0;
+    this.file_progress = 0;
   }
 
   ResourceManager.prototype.joinPath = function(path) {
     if (this.base_path === "") {
       return path;
     } else {
-      return util.stripRight(this.base_path, "/") + "/" + path;
+      return this.base_path + path;
     }
   };
 
@@ -1374,9 +1383,9 @@ ResourceManager = (function() {
       first_stage = false;
     }
     if (first_stage) {
-      return this.resources.stage1_images.push(this.joinPath(path));
+      return this.resources.stage1_images.push(path);
     } else {
-      return this.resources.images.push(this.joinPath(path));
+      return this.resources.images.push(path);
     }
   };
 
@@ -1385,9 +1394,9 @@ ResourceManager = (function() {
       first_stage = false;
     }
     if (first_stage) {
-      return this.resources.stage1_audio.push(this.joinPath(path));
+      return this.resources.stage1_audio.push(path);
     } else {
-      return this.resources.audio.push(this.joinPath(path));
+      return this.resources.sounds.push(path);
     }
   };
 
@@ -1396,9 +1405,9 @@ ResourceManager = (function() {
       first_stage = false;
     }
     if (first_stage) {
-      return this.resources.stage1_scripts.push(this.joinPath(path));
+      return this.resources.stage1_scripts.push(path);
     } else {
-      return this.resources.scripts.push(this.joinPath(path));
+      return this.resources.scripts.push(path);
     }
   };
 
@@ -1407,9 +1416,9 @@ ResourceManager = (function() {
       first_stage = false;
     }
     if (first_stage) {
-      return this.resources.stage1_data.push(this.joinPath(path));
+      return this.resources.stage1_data.push(path);
     } else {
-      return this.resources.data.push(this.joinPath(path));
+      return this.resources.data.push(path);
     }
   };
 
@@ -1466,48 +1475,98 @@ ResourceManager = (function() {
   };
 
   ResourceManager.prototype.getImage = function(path) {
-    console.log("objs", this.resource_objects);
-    console.log("path", path);
     return this.resource_objects.images[this.joinPath(path)];
   };
 
   ResourceManager.prototype.updateProgress = function(event) {
-    return pass;
+    return this.file_progress = event.progress;
   };
 
-  ResourceManager.prototype.do_preload = function(stage, progress_callback, finished_callback) {
-    var image, images, obj, scripts, sounds, _i, _len;
+  ResourceManager.prototype.handleFinishedFile = function(event) {
+    switch (event.item.type) {
+      case createjs.LoadQueue.IMAGE:
+        this.resource_objects.images[event.item.src] = event.result;
+        break;
+      case createjs.LoadQueue.JAVASCRIPT:
+        this.resource_objects.scripts[event.item.src] = event.result;
+        break;
+      case createjs.LoadQueue.SOUND:
+        this.resource_objects.sounds[event.item.src] = event.result;
+        break;
+      case createjs.LoadQueue.JSON:
+        this.resource_objects.data[event.item.src] = event.result;
+    }
+    if (this.current_stage === 2) {
+      this.files_loaded += 1;
+      return this.total_progress = this.files_loaded / this.files_total;
+    }
+  };
+
+  ResourceManager.prototype.doPreload = function(stage, progress_callback, finished_callback) {
+    var data_file, data_files, image, images, script, scripts, sound, sounds, _i, _j, _k, _l, _len, _len1, _len2, _len3;
+    this.current_stage = stage;
     if (stage === 1) {
       images = this.resources.stage1_images;
       scripts = this.resources.stage1_scripts;
       sounds = this.resources.stage1_sounds;
+      data_files = this.resources.stage1_data;
     } else {
       images = this.resources.images;
       scripts = this.resources.scripts;
       sounds = this.resources.sounds;
+      data_files = this.resources.data;
     }
+    this.queue = new createjs.LoadQueue(true, this.base_path);
     for (_i = 0, _len = images.length; _i < _len; _i++) {
       image = images[_i];
-      obj = document.createElement("img");
-      obj.src = image;
-      this.resource_objects.images[image] = obj;
+      this.files_total += 1;
+      this.queue.loadFile({
+        src: image,
+        type: createjs.LoadQueue.IMAGE
+      }, false);
     }
-    console.log("done stage " + stage);
-    return finished_callback();
+    for (_j = 0, _len1 = scripts.length; _j < _len1; _j++) {
+      script = scripts[_j];
+      this.files_total += 1;
+      this.queue.loadFile({
+        src: script,
+        type: createjs.LoadQueue.JAVASCRIPT
+      }, false);
+    }
+    for (_k = 0, _len2 = sounds.length; _k < _len2; _k++) {
+      sound = sounds[_k];
+      this.files_total += 1;
+      this.queue.loadFile({
+        src: sound,
+        type: createjs.LoadQueue.SOUND
+      }, false);
+    }
+    for (_l = 0, _len3 = data_files.length; _l < _len3; _l++) {
+      data_file = data_files[_l];
+      this.files_total += 1;
+      this.queue.loadFile({
+        src: data_file,
+        type: createjs.LoadQueue.JSON
+      });
+    }
+    this.queue.on("progress", progress_callback);
+    this.queue.on("fileload", this.handleFinishedFile);
+    this.queue.on("complete", finished_callback);
+    return this.queue.load();
   };
 
   ResourceManager.prototype.prepare = function(finished_callback) {
     if (finished_callback == null) {
       finished_callback = (function() {});
     }
-    return this.do_preload(1, (function() {}), finished_callback.bind(this));
+    return this.doPreload(1, (function() {}), finished_callback.bind(this));
   };
 
   ResourceManager.prototype.load = function(finished_callback) {
     if (finished_callback == null) {
       finished_callback = (function() {});
     }
-    return this.do_preload(2, this.updateProgress, finished_callback.bind(this));
+    return this.doPreload(2, this.updateProgress, finished_callback.bind(this));
   };
 
   return ResourceManager;
@@ -1872,7 +1931,6 @@ util = {
     return string.replace(new RegExp(character + "*$", "g"), "");
   },
   unpackElement: function(element) {
-    console.log(element);
     if (element instanceof jQuery) {
       return element[0];
     } else {

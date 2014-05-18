@@ -2,43 +2,53 @@ class ResourceManager
 	constructor: (@base_path = "") ->
 		@resources = 
 			stage1_images: []
-			stage1_audio: []
+			stage1_sounds: []
 			stage1_scripts: []
+			stage1_data: []
 			images: []
-			audio: []
+			sounds: []
 			scripts: []
+			data: []
 			
 		@resource_objects =
 			images: {}
-			audio: {}
+			sounds: {}
 			scripts: {}
+			data: {}
+			
+		@base_path = util.stripRight(@base_path, "/") + "/"
+			
+		@files_loaded = 0
+		@files_total = 0
+		@total_progress = 0
+		@file_progress = 0
 
 	joinPath: (path) =>
-		if @base_path == "" then path else util.stripRight(@base_path, "/") + "/" + path
+		if @base_path == "" then path else @base_path + path
 
 	addImage: (path, first_stage = false) =>
 		if first_stage
-			@resources.stage1_images.push(@joinPath(path))
+			@resources.stage1_images.push(path)
 		else
-			@resources.images.push(@joinPath(path))
+			@resources.images.push(path)
 
 	addSound: (path, first_stage = false) =>
 		if first_stage
-			@resources.stage1_audio.push(@joinPath(path))
+			@resources.stage1_audio.push(path)
 		else
-			@resources.audio.push(@joinPath(path))
+			@resources.sounds.push(path)
 
 	addScript: (path, first_stage = false) =>
 		if first_stage
-			@resources.stage1_scripts.push(@joinPath(path))
+			@resources.stage1_scripts.push(path)
 		else
-			@resources.scripts.push(@joinPath(path))
+			@resources.scripts.push(path)
 			
 	addDataFile: (path, first_stage = false) =>
 		if first_stage
-			@resources.stage1_data.push(@joinPath(path))
+			@resources.stage1_data.push(path)
 		else
-			@resources.data.push(@joinPath(path))
+			@resources.data.push(path)
 
 	addImages: (paths, first_stage = false) =>
 		@addImage(path, first_stage) for path in paths
@@ -53,37 +63,65 @@ class ResourceManager
 		@addDataFile(path, first_stage) for path in paths
 			
 	getImage: (path) =>
-		# FIXME: Do properly when PreloadJS is added
-		console.log("objs", @resource_objects)
-		console.log("path", path)
 		return @resource_objects.images[@joinPath(path)]
 			
 	updateProgress: (event) =>
-		pass
+		@file_progress = event.progress
 		
-	do_preload: (stage, progress_callback, finished_callback) =>
+	handleFinishedFile: (event) =>
+		switch event.item.type
+			when createjs.LoadQueue.IMAGE then @resource_objects.images[event.item.src] = event.result
+			when createjs.LoadQueue.JAVASCRIPT then @resource_objects.scripts[event.item.src] = event.result
+			when createjs.LoadQueue.SOUND then @resource_objects.sounds[event.item.src] = event.result
+			when createjs.LoadQueue.JSON then @resource_objects.data[event.item.src] = event.result
+		
+		if @current_stage == 2
+			@files_loaded += 1
+			@total_progress = @files_loaded / @files_total
+		
+	doPreload: (stage, progress_callback, finished_callback) =>
+		@current_stage = stage
+		
 		if stage == 1
 			images = @resources.stage1_images
 			scripts = @resources.stage1_scripts
 			sounds = @resources.stage1_sounds
+			data_files = @resources.stage1_data
 		else
 			images = @resources.images
 			scripts = @resources.scripts
 			sounds = @resources.sounds
+			data_files = @resources.data
 			
+		@queue = new createjs.LoadQueue(true, @base_path)
+		
 		for image in images
-			obj = document.createElement("img")
-			obj.src = image
-			@resource_objects.images[image] = obj
+			@files_total += 1
+			@queue.loadFile({src: image, type: createjs.LoadQueue.IMAGE}, false)
 			
-		console.log("done stage " + stage)
-		finished_callback()
+		for script in scripts
+			@files_total += 1
+			@queue.loadFile({src: script, type: createjs.LoadQueue.JAVASCRIPT}, false)
+			
+		for sound in sounds
+			@files_total += 1
+			@queue.loadFile({src: sound, type: createjs.LoadQueue.SOUND}, false)
+			
+		for data_file in data_files
+			@files_total += 1
+			@queue.loadFile({src: data_file, type: createjs.LoadQueue.JSON})
+		
+		@queue.on("progress", progress_callback)
+		@queue.on("fileload", @handleFinishedFile)
+		@queue.on("complete", finished_callback)
+		
+		@queue.load()
 		
 	prepare: (finished_callback = (->)) =>
 		# This performs a stage 1 preload, loading the initial assets required for displaying the preload screen.
-		@do_preload(1, (->), finished_callback.bind(this))
+		@doPreload(1, (->), finished_callback.bind(this))
 
 	load: (finished_callback = (->)) =>
 		# This performs the stage 2 preload; it will load the actual game assets.
-		@do_preload(2, @updateProgress, finished_callback.bind(this))
+		@doPreload(2, @updateProgress, finished_callback.bind(this))
 		
