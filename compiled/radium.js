@@ -1670,7 +1670,6 @@ Sprite = (function() {
     this.image = image;
     this.getSize = __bind(this.getSize, this);
     this.draw = __bind(this.draw, this);
-    true;
     _ref = this.getSize(), this.width = _ref.width, this.height = _ref.height;
   }
 
