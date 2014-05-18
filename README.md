@@ -6,7 +6,7 @@ A game engine, under development. Currently being rewritten in Coffeescript.
 
 To install dependencies you need for developing on Radium: `npm install`
 
-Note that coffee-script may fail to install; in that case, you'll need to install it manually (and you can ignore the error from the previous command): `sudo npm install -g coffee-script`
+Note that `coffee-script` may fail to install; in that case, you'll need to install it manually (and you can ignore the error from the previous command): `sudo npm install -g coffee-script`
 
 To run the build scripts in development mode, automatically recompiling both engine and sample game code as files are changed: `gulp watch`
 
