@@ -1,5 +1,6 @@
 class Sprite
 	constructor: (@engine, @name, @image) ->
+		true # Debugging
 		{width: @width, height: @height} = @getSize()
 		
 	draw: (x, y, options = {}, surface = "") =>

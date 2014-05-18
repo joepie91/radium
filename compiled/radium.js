@@ -1,3 +1,1805 @@
+(function () {
+
+
+
+var Engine,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+window.pass = void 0;
+
+Engine = (function() {
+  function Engine(resource_manager) {
+    this.resource_manager = resource_manager;
+    this.getTileset = __bind(this.getTileset, this);
+    this.getSprite = __bind(this.getSprite, this);
+    this.getSound = __bind(this.getSound, this);
+    this.getObject = __bind(this.getObject, this);
+    this.getScene = __bind(this.getScene, this);
+    this.createTileset = __bind(this.createTileset, this);
+    this.createSprite = __bind(this.createSprite, this);
+    this.createSound = __bind(this.createSound, this);
+    this.createObject = __bind(this.createObject, this);
+    this.createScene = __bind(this.createScene, this);
+    this.setPreloadScene = __bind(this.setPreloadScene, this);
+    this.setInitialScene = __bind(this.setInitialScene, this);
+    this.skipTimers = __bind(this.skipTimers, this);
+    this.updateTimers = __bind(this.updateTimers, this);
+    this.iteration = __bind(this.iteration, this);
+    this.loop = __bind(this.loop, this);
+    this.start = __bind(this.start, this);
+    this.updateCanvasSize = __bind(this.updateCanvasSize, this);
+    this.getSurface = __bind(this.getSurface, this);
+    this.createSurface = __bind(this.createSurface, this);
+    this.addCanvas = __bind(this.addCanvas, this);
+    this.canvases = {};
+    this.fps = 45;
+    this.last_frameskip_collection = Math.floor(Date.now());
+    this.frameskip = 0;
+    this.current_frameskip = 0;
+    this.current_frame = 0;
+    this.scenes = {};
+    this.objects = {};
+    this.sounds = {};
+    this.sprites = {};
+    this.tilesets = {};
+    this.named_timers = {};
+    this.unnamed_timers = [];
+    this.ease.engine = this;
+  }
+
+  Engine.prototype.addCanvas = function(canvas, label) {
+    if (label == null) {
+      label = "";
+    }
+    return this.canvases[label] = util.unpackElement(canvas);
+  };
+
+  Engine.prototype.createSurface = function(label) {
+    return this.canvases[label] = document.createElement("canvas");
+  };
+
+  Engine.prototype.getSurface = function(label) {
+    var _ref;
+    if (typeof label === "string") {
+      return (_ref = this.canvases[label]) != null ? _ref.getContext("2d") : void 0;
+    } else if (label.tagName === "CANVAS") {
+      return label.getContext("2d");
+    } else {
+      return label;
+    }
+  };
+
+  Engine.prototype.updateCanvasSize = function(canvas, w, h) {
+    canvas.width = w;
+    canvas.height = h;
+    canvas.style.width = "" + w + "px";
+    return canvas.style.height = "" + h + "px";
+  };
+
+  Engine.prototype.start = function() {
+    this.initial_scene.addTargetSurface(this.canvases[""]);
+    return this.loop();
+  };
+
+  Engine.prototype.loop = function() {
+    return this.iteration();
+  };
+
+  Engine.prototype.iteration = function() {
+    var belated_timeout, current_frame, frame_interval, name, next_frame, overtime, scene, skipped_frames, _ref;
+    frame_interval = 1000 / this.fps;
+    current_frame = Date.now();
+    next_frame = current_frame + frame_interval;
+    this.current_frame += 1;
+    if (Math.floor(current_frame) > this.last_frameskip_collection) {
+      this.frameskip = this.current_frameskip;
+      this.current_frameskip = 0;
+      this.last_frameskip_collection = Math.floor(current_frame);
+    }
+    this.updateTimers();
+    _ref = this.scenes;
+    for (name in _ref) {
+      scene = _ref[name];
+      if (scene.active) {
+        scene.iteration();
+      }
+    }
+    if (Date.now() < next_frame) {
+      return setTimeout(this.iteration, next_frame - Date.now());
+    } else {
+      overtime = Date.now() - next_frame;
+      skipped_frames = Math.floor(overtime / frame_interval);
+      this.current_frameskip += skipped_frames;
+      this.current_frame += skipped_frames;
+      this.skipTimers(skipped_frames);
+      belated_timeout = overtime % frame_interval;
+      return setTimeout(this.iteration, belated_timeout);
+    }
+  };
+
+  Engine.prototype.updateTimers = function() {
+    var key, timer, timer_name, val, _i, _len, _ref, _ref1, _results;
+    _ref = this.unnamed_timers.concat((function() {
+      var _ref, _results;
+      _ref = this.named_timers;
+      _results = [];
+      for (key in _ref) {
+        val = _ref[key];
+        _results.push(val);
+      }
+      return _results;
+    }).call(this));
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      timer = _ref[_i];
+      timer.step();
+    }
+    this.unnamed_timers = this.unnamed_timers.filter(function(obj) {
+      return !obj.finished;
+    });
+    _ref1 = this.named_timers;
+    _results = [];
+    for (timer_name in _ref1) {
+      timer = _ref1[timer_name];
+      if (timer.finished) {
+        _results.push(delete this.named_timers[timer_name]);
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
+  Engine.prototype.skipTimers = function(frames) {
+    var key, timer, val, _i, _len, _ref, _results;
+    _ref = this.unnamed_timers.concat((function() {
+      var _ref, _results1;
+      _ref = this.named_timers;
+      _results1 = [];
+      for (key in _ref) {
+        val = _ref[key];
+        _results1.push(val);
+      }
+      return _results1;
+    }).call(this));
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      timer = _ref[_i];
+      _results.push(timer.skip(frames));
+    }
+    return _results;
+  };
+
+  Engine.prototype.setInitialScene = function(scene) {
+    return this.initial_scene = scene;
+  };
+
+  Engine.prototype.setPreloadScene = function(scene) {
+    return this.preload_scene = scene;
+  };
+
+  Engine.prototype.createScene = function(name) {
+    var scene;
+    scene = new Scene(this, name);
+    if (this.initial_scene == null) {
+      this.initial_scene = scene;
+    }
+    return this.scenes[name] = scene;
+  };
+
+  Engine.prototype.createObject = function(name) {
+    return this.objects[name] = new Object(this, name);
+  };
+
+  Engine.prototype.createSound = function(name, sound) {
+    return this.sounds[name] = new Sound(this, name, this.resource_manager.getSound(sound));
+  };
+
+  Engine.prototype.createSprite = function(name, image) {
+    console.log("gget", this.resource_manager.getImage(image));
+    return this.sprites[name] = new Sprite(this, name, this.resource_manager.getImage(image));
+  };
+
+  Engine.prototype.createTileset = function(name, image, tile_width, tile_height) {
+    return this.tilesets[name] = new Tileset(this, name, this.resource_manager.getImage(image), tile_width, tile_height);
+  };
+
+  Engine.prototype.getScene = function(name) {
+    if (typeof name === "string") {
+      return this.scenes[name];
+    } else {
+      return name;
+    }
+  };
+
+  Engine.prototype.getObject = function(name) {
+    if (typeof name === "string") {
+      return this.objects[name];
+    } else {
+      return name;
+    }
+  };
+
+  Engine.prototype.getSound = function(name) {
+    if (typeof name === "string") {
+      return this.sounds[name];
+    } else {
+      return name;
+    }
+  };
+
+  Engine.prototype.getSprite = function(name) {
+    if (typeof name === "string") {
+      return this.sprites[name];
+    } else {
+      return name;
+    }
+  };
+
+  Engine.prototype.getTileset = function(name) {
+    if (typeof name === "string") {
+      return this.tilesets[name];
+    } else {
+      return name;
+    }
+  };
+
+  return Engine;
+
+})();
+
+Engine.prototype.draw = {
+  _startPath: (function(_this) {
+    return function(surface, options) {
+      var _ref;
+      surface = _this.getSurface(surface);
+      if ((_ref = !options._is_text) != null ? _ref : false) {
+        surface.beginPath();
+      }
+      return surface;
+    };
+  })(this),
+  _finishPath: (function(_this) {
+    return function(surface, options) {
+      var _ref, _ref1, _ref10, _ref11, _ref12, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+      if ((_ref = options.stroke) != null ? _ref : true) {
+        surface.lineWidth = (_ref1 = (_ref2 = options.lineWidth) != null ? _ref2 : (_ref3 = options.pen) != null ? _ref3.lineWidth : void 0) != null ? _ref1 : 1;
+        surface.strokeStyle = (_ref4 = (_ref5 = options.lineColor) != null ? _ref5 : (_ref6 = options.pen) != null ? _ref6.lineColor : void 0) != null ? _ref4 : "black";
+        if ((_ref7 = options._is_text) != null ? _ref7 : false) {
+          surface.strokeText(options.text, options.x, options.y);
+        } else {
+          surface.stroke();
+        }
+      }
+      if ((_ref8 = options.fill) != null ? _ref8 : false) {
+        surface.fillStyle = (_ref9 = (_ref10 = options.fillColor) != null ? _ref10 : (_ref11 = options.pen) != null ? _ref11.fillColor : void 0) != null ? _ref9 : "white";
+        if ((_ref12 = options._is_text) != null ? _ref12 : false) {
+          return surface.fillText(options.text, options.x, options.y);
+        } else {
+          return surface.fill();
+        }
+      }
+    };
+  })(this),
+  _getTextWidth: (function(_this) {
+    return function(surface, text, options) {
+      var width;
+      _this._applyTextContext(surface, options);
+      width = surface.measureText(text).width;
+      surface.restore();
+      return width;
+    };
+  })(this),
+  _applyTextContext: (function(_this) {
+    return function(surface, options) {
+      var font_family, font_size, font_style, font_weight, scale, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
+      font_family = (_ref = options.font) != null ? _ref : "sans-serif";
+      font_size = (_ref1 = options.size) != null ? _ref1 : 16;
+      font_weight = (_ref2 = options.weight) != null ? _ref2 : "normal";
+      font_style = (_ref3 = options.style) != null ? _ref3 : "normal";
+      scale = (_ref4 = options.scale) != null ? _ref4 : 1;
+      surface.save();
+      surface.font = "" + font_weight + " " + font_style + " " + font_size + "px '" + font_family + "'";
+      surface.globalAlpha = (_ref5 = options.alpha) != null ? _ref5 : 1;
+      return surface.scale(scale, scale);
+    };
+  })(this),
+  line: (function(_this) {
+    return function(x1, y1, x2, y2, options, surface) {
+      if (options == null) {
+        options = {};
+      }
+      if (surface == null) {
+        surface = "";
+      }
+      surface = _this._startPath(surface, options);
+      surface.moveTo(x1, y1);
+      surface.lineTo(x2, y2);
+      return _this._finishPath(surface, options);
+    };
+  })(this),
+  rectangle: (function(_this) {
+    return function(x1, y1, x2, y2, options, surface) {
+      if (options == null) {
+        options = {};
+      }
+      if (surface == null) {
+        surface = "";
+      }
+      surface = _this._startPath(surface, options);
+      surface.rect(x1, y1, x2 - x1, y2 - y1);
+      return _this._finishPath(surface, options);
+    };
+  })(this),
+  boxEllipse: (function(_this) {
+    return function(x1, y1, x2, y2, options, surface) {
+      var rx, ry, x, y;
+      if (options == null) {
+        options = {};
+      }
+      if (surface == null) {
+        surface = "";
+      }
+      x = (x1 + x2) / 2;
+      y = (y1 + y2) / 2;
+      rx = (x2 - x1) / 2;
+      ry = (y2 - y1) / 2;
+      return _this.radiusEllipse(x, y, rx, ry, options, surface);
+    };
+  })(this),
+  radiusEllipse: (function(_this) {
+    return function(x, y, rx, ry, options, surface) {
+      var i, step, _i, _ref, _ref1;
+      if (options == null) {
+        options = {};
+      }
+      if (surface == null) {
+        surface = "";
+      }
+      surface = _this._startPath(surface, options);
+      step = (_ref = options.step) != null ? _ref : 0.1;
+      if (rx === ry) {
+        surface.arc(x, y, rx, 0, 2 * Math.PI, false);
+      } else {
+        surface.moveTo(x + rx, y);
+        for (i = _i = 0, _ref1 = Math.PI * 2 + step; 0 <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
+          surface.lineTo(x + (Math.cos(i) * rx), y + (Math.sin(i) * ry));
+        }
+      }
+      return _this._finishPath(surface, options);
+    };
+  })(this),
+  boxPolygon: (function(_this) {
+    return function(x1, y1, x2, y2, sides, options, surface) {
+      if (options == null) {
+        options = {};
+      }
+      if (surface == null) {
+        surface = "";
+      }
+      return pass;
+    };
+  })(this),
+  radiusPolygon: (function(_this) {
+    return function(x, y, r, sides, options, surface) {
+      if (options == null) {
+        options = {};
+      }
+      if (surface == null) {
+        surface = "";
+      }
+      return pass;
+    };
+  })(this),
+  text: (function(_this) {
+    return function(x, y, text, options, surface) {
+      var text_width;
+      if (options == null) {
+        options = {};
+      }
+      if (surface == null) {
+        surface = "";
+      }
+      if (options.alignment == null) {
+        options.alignment = "left";
+      }
+      if (options.scale == null) {
+        options.scale = 1;
+      }
+      options._is_text = true;
+      options.text = text;
+      options.y = y;
+      if (options.fill == null) {
+        options.fill = true;
+      }
+      if (options.fillColor == null) {
+        options.fillColor = "black";
+      }
+      if (options.stroke == null) {
+        options.stroke = false;
+      }
+      if (alignment === "left") {
+        options.x = x;
+      } else {
+        text_width = _this._getTextWidth(text, options);
+        if (alignment === "center") {
+          options.x = x - ((text_width / 2) * scale * scale);
+        } else if (alignment === "right") {
+          options.x = x - text_width;
+        }
+      }
+      _this._startPath(surface, options);
+      _this._finishPath(surface, options);
+      return surface.restore();
+    };
+  })(this)
+};
+
+var Ease,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
+  __slice = [].slice;
+
+Engine.prototype.ease = {
+  _calculateElasticValues: function(duration, amplitude, period, change, inout) {
+    var overshoot;
+    if (inout == null) {
+      inout = false;
+    }
+    if (period == null) {
+      if (inout) {
+        period = duration * (0.3 * 1.5);
+      } else {
+        period = duration * 0.3;
+      }
+    }
+    if ((amplitude == null) || amplitude < Math.abs(change)) {
+      amplitude = change;
+      overshoot = period / 4;
+    } else {
+      overshoot = period / (2 * Math.PI) * Math.asin(change / amplitude);
+    }
+    return [amplitude, period, change, overshoot];
+  },
+  backIn: function(start, end, duration, next, infinite, invert_repeat, overshoot) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    if (overshoot == null) {
+      overshoot = 1.70158;
+    }
+    return new Ease(this.engine, "backIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, overshoot);
+  },
+  backOut: function(start, end, duration, next, infinite, invert_repeat, overshoot) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    if (overshoot == null) {
+      overshoot = 1.70158;
+    }
+    return new Ease(this.engine, "backOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, overshoot);
+  },
+  backInOut: function(start, end, duration, next, infinite, invert_repeat, overshoot) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    if (overshoot == null) {
+      overshoot = 1.70158;
+    }
+    return new Ease(this.engine, "backInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, overshoot);
+  },
+  bounceOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "bounceOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  bounceIn: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "bounceIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  bounceInOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "bounceInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  circOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "circOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  circIn: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "circIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  circInOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "circInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  cubicOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "cubicOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  cubicIn: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "cubicIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  cubicInOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "cubicInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  elasticOut: function(start, end, duration, next, infinite, invert_repeat, amplitude, period) {
+    var change, overshoot, _ref;
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    if (amplitude == null) {
+      amplitude = null;
+    }
+    if (period == null) {
+      period = null;
+    }
+    _ref = this._calculateElasticValues(duration, amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
+    end = start + change;
+    return new Ease(this.engine, "elasticOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot);
+  },
+  elasticIn: function(start, end, duration, next, infinite, invert_repeat, amplitude, period) {
+    var change, overshoot, _ref;
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    if (amplitude == null) {
+      amplitude = null;
+    }
+    if (period == null) {
+      period = null;
+    }
+    _ref = this._calculateElasticValues(duration, amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
+    end = start + change;
+    return new Ease(this.engine, "elasticIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot);
+  },
+  elasticInOut: function(start, end, duration, next, infinite, invert_repeat, amplitude, period) {
+    var change, overshoot, _ref;
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    if (amplitude == null) {
+      amplitude = null;
+    }
+    if (period == null) {
+      period = null;
+    }
+    _ref = this._calculateElasticValues(duration, amplitude, period, end - start, true), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
+    end = start + change;
+    return new Ease(this.engine, "elasticInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot);
+  },
+  expoOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "expoOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  expoIn: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "expoIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  expoInOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "expoInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  linearNone: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  linearOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  linearIn: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  linearInOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  quadOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "quadOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  quadIn: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "quadIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  quadInOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "quadInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  quartOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "quartOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  quartIn: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "quartIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  quartInOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "quartInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  sineOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "sineOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  sineIn: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "sineIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  },
+  sineInOut: function(start, end, duration, next, infinite, invert_repeat) {
+    if (next == null) {
+      next = null;
+    }
+    if (infinite == null) {
+      infinite = false;
+    }
+    if (invert_repeat == null) {
+      invert_repeat = false;
+    }
+    return new Ease(this.engine, "sineInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
+  }
+};
+
+Ease = (function() {
+  function Ease() {
+    var duration, end, engine, infinite, invert_repeat, next, params, start, start_frame, type;
+    engine = arguments[0], type = arguments[1], infinite = arguments[2], start = arguments[3], end = arguments[4], start_frame = arguments[5], duration = arguments[6], invert_repeat = arguments[7], next = arguments[8], params = 10 <= arguments.length ? __slice.call(arguments, 9) : [];
+    this.engine = engine;
+    this.type = type;
+    this.infinite = infinite;
+    this.start = start;
+    this.end = end;
+    this.start_frame = start_frame;
+    this.duration = duration;
+    this.invert_repeat = invert_repeat;
+    this.next = next;
+    this.params = params;
+    this.quadInOut = __bind(this.quadInOut, this);
+    this.quadOut = __bind(this.quadOut, this);
+    this.quadIn = __bind(this.quadIn, this);
+    this.linearNone = __bind(this.linearNone, this);
+    this.expoInOut = __bind(this.expoInOut, this);
+    this.expoOut = __bind(this.expoOut, this);
+    this.expoIn = __bind(this.expoIn, this);
+    this.elasticInOut = __bind(this.elasticInOut, this);
+    this.elasticIn = __bind(this.elasticIn, this);
+    this.elasticOut = __bind(this.elasticOut, this);
+    this.cubicInOut = __bind(this.cubicInOut, this);
+    this.cubicOut = __bind(this.cubicOut, this);
+    this.cubicIn = __bind(this.cubicIn, this);
+    this.circInOut = __bind(this.circInOut, this);
+    this.circOut = __bind(this.circOut, this);
+    this.circIn = __bind(this.circIn, this);
+    this.bounceInOut = __bind(this.bounceInOut, this);
+    this.bounceIn = __bind(this.bounceIn, this);
+    this.bounceOut = __bind(this.bounceOut, this);
+    this.backInOut = __bind(this.backInOut, this);
+    this.backOut = __bind(this.backOut, this);
+    this.backIn = __bind(this.backIn, this);
+    this.valueOf = __bind(this.valueOf, this);
+    this.updateValue = __bind(this.updateValue, this);
+    this.abort = __bind(this.abort, this);
+    this.goToNext = __bind(this.goToNext, this);
+    this.func = this[this.type];
+    this.change = this.end - this.start;
+    this.value = this.start;
+    this.last_updated = this.start_frame;
+    this.finished = false;
+  }
+
+  Ease.prototype.goToNext = function() {
+    this.func = this[this.next.type];
+    this.change = this.next.change;
+    this.value = this.next.value;
+    this.start_frame = this.last_updated = this.engine.current_frame;
+    this.infinite = this.next.infinite;
+    this.end = this.next.end;
+    this.start = this.next.start;
+    this.change = this.next.change;
+    this.invert_repeat = this.next.invert_repeat;
+    this.params = this.next.params;
+    this.duration = this.next.duration;
+    this.finished = false;
+    return this.next = this.next.next;
+  };
+
+  Ease.prototype.abort = function() {
+    return this.finished = true;
+  };
+
+  Ease.prototype.updateValue = function(current_frame) {
+    this.change = this.end - this.start;
+    if (current_frame >= this.start_frame + this.duration) {
+      if (this.infinite) {
+        this.start_frame = current_frame;
+        if (this.invert_repeat) {
+          this.start = this.start + this.change;
+          this.change = -this.change;
+        }
+        return this.value = this.start;
+      } else if (this.next != null) {
+        return this.goToNext();
+      } else {
+        this.finished = true;
+        return this.value = this.start + this.change;
+      }
+    } else {
+      return this.value = this.func(current_frame - this.start_frame);
+    }
+  };
+
+  Ease.prototype.valueOf = function() {
+    if (!this.finished && this.engine.current_frame > this.last_updated) {
+      this.updateValue(this.engine.current_frame);
+      this.last_updated = this.engine.current_frame;
+    }
+    return this.value;
+  };
+
+  Ease.prototype.backIn = function(time) {
+    var overshoot;
+    time = time / this.duration;
+    overshoot = this.params[0];
+    return this.change * time * time * ((overshoot + 1) * time - overshoot) + this.start;
+  };
+
+  Ease.prototype.backOut = function(time) {
+    var overshoot;
+    time = time / this.duration - 1;
+    overshoot = this.params[0];
+    return this.change * (time * time * ((overshoot + 1) * time + overshoot) + 1) + this.start;
+  };
+
+  Ease.prototype.backInOut = function(time) {
+    var overshoot;
+    time = time / (this.duration / 2);
+    overshoot = this.params[0] * 1.525;
+    if (time < 1) {
+      return this.change / 2 * (time * time * ((overshoot + 1) * time - overshoot)) + this.start;
+    } else {
+      time -= 2;
+      return this.change / 2 * (time * time * ((overshoot + 1) * time + overshoot) + 2) + this.start;
+    }
+  };
+
+  Ease.prototype.bounceOut = function(time, start) {
+    if (start == null) {
+      start = null;
+    }
+    time = time / this.duration;
+    start = start != null ? start : this.start;
+    if (time < 1 / 2.75) {
+      return this.change * (7.5625 * time * time) + start;
+    } else if (time < 2 / 2.75) {
+      time = time - (1.5 / 2.75);
+      return this.change * (7.5625 * time * time + 0.75) + start;
+    } else if (time < 2.5 / 2.75) {
+      time = time - (2.25 / 2.75);
+      return this.change * (7.5625 * time * time + 0.9375) + start;
+    } else {
+      time = time - (2.625 / 2.75);
+      return this.change * (7.5625 * time * time + 0.984375) + start;
+    }
+  };
+
+  Ease.prototype.bounceIn = function(time, start) {
+    if (start == null) {
+      start = null;
+    }
+    start = start != null ? start : this.start;
+    return this.change - this.bounceOut(this.duration - time, 0) + start;
+  };
+
+  Ease.prototype.bounceInOut = function(time) {
+    if (time < this.duration / 2) {
+      return this.bounceIn(time * 2, 0) + this.start;
+    } else {
+      return this.bounceOut(time * 2 - this.duration, 0) + this.start;
+    }
+  };
+
+  Ease.prototype.circIn = function(time) {
+    time = time / this.duration;
+    return -this.change * (Math.sqrt(1 - time * time) - 1) + this.start;
+  };
+
+  Ease.prototype.circOut = function(time) {
+    time = time / this.duration - 1;
+    return this.change * Math.sqrt(1 - time * time) + this.start;
+  };
+
+  Ease.prototype.circInOut = function(time) {
+    time = time / (this.duration / 2);
+    if (time < 1) {
+      return -this.change / 2 * (Math.sqrt(1 - time * time) - 1) + this.start;
+    } else {
+      time = time - 2;
+      return this.change / 2 * (Math.sqrt(1 - time * time) + 1) + this.start;
+    }
+  };
+
+  Ease.prototype.cubicIn = function(time) {
+    time = time / this.duration;
+    return this.change * time * time * time + this.start;
+  };
+
+  Ease.prototype.cubicOut = function(time) {
+    time = time / this.duration - 1;
+    return this.change * (time * time * time + 1) + this.start;
+  };
+
+  Ease.prototype.cubicInOut = function(time) {
+    time = time / (this.duration / 2);
+    if (time < 1) {
+      return change / 2 * time * time * time + this.start;
+    } else {
+      time = time - 2;
+      return change / 2 * (time * time * time + 2) + begin;
+    }
+  };
+
+  Ease.prototype.elasticOut = function(time) {
+    var amplitude, overshoot, period;
+    time = time / this.duration;
+    amplitude = this.params[0];
+    period = this.params[1];
+    overshoot = this.params[2];
+    return (amplitude * Math.pow(2, -10 * time)) * Math.sin((time * this.duration - overshoot) * (2 * Math.PI) / period) + this.change + this.start;
+  };
+
+  Ease.prototype.elasticIn = function(time) {
+    var amplitude, overshoot, period;
+    time = time / this.duration;
+    amplitude = this.params[0];
+    period = this.params[1];
+    overshoot = this.params[2];
+    return -(amplitude * Math.pow(2, -10 * time)) * Math.sin((time * this.duration - overshoot) * (2 * Math.PI) / period) + this.start;
+  };
+
+  Ease.prototype.elasticInOut = function(time) {
+    var amplitude, overshoot, period;
+    time = time / (this.duration / 2) - 1;
+    amplitude = this.params[0];
+    period = this.params[1];
+    overshoot = this.params[2];
+    if (time < 1) {
+      return -0.5 * (amplitude * Math.pow(2, -10 * time)) * Math.sin((time * this.duration - overshoot) * ((2 * Math.PI) / period)) + this.start;
+    } else {
+      return amplitude * Math.pow(2, -10 * time) * Math.sin((time * this.duration - overshoot) * (2 * Math.PI) / period) + this.change + this.start;
+    }
+  };
+
+  Ease.prototype.expoIn = function(time) {
+    return this.change * Math.pow(2, 10 * (time / this.duration - 1)) + this.start;
+  };
+
+  Ease.prototype.expoOut = function(time) {
+    return this.change * (-Math.pow(2, -10 * time / this.duration) + 1) + this.start;
+  };
+
+  Ease.prototype.expoInOut = function(time) {
+    time = time / (this.duration / 2);
+    if (time < 1) {
+      return this.change / 2 * Math.pow(2, 10 * (time - 1)) + this.start;
+    } else {
+      return this.change / 2 * (-Math.pow(2, -10 * (time - 1)) + 2) + this.start;
+    }
+  };
+
+  Ease.prototype.linearNone = function(time) {
+    return this.change * time / this.duration + this.start;
+  };
+
+  Ease.prototype.quadIn = function(time) {
+    time = time / this.duration;
+    return this.change * time * time + this.start;
+  };
+
+  Ease.prototype.quadOut = function(time) {
+    time = time / this.duration;
+    return -this.change * time * (time - 2) + this.start;
+  };
+
+  Ease.prototype.quadInOut = function(time) {
+    time = time / (this.duration / 2);
+    if (time < 1) {
+      return this.change / 2 * time * time + this.start;
+    } else {
+      time = time - 1;
+      return -this.change / 2 * (time * (time - 2) - 1) + this.start;
+    }
+  };
+
+  return Ease;
+
+})();
+
+var __slice = [].slice;
+
+Engine.prototype.random = {
+  number: (function(_this) {
+    return function(min, max, precision) {
+      var base_number, rounding_factor, space;
+      base_number = Math.random();
+      space = Math.abs(max - min);
+      rounding_factor = 1 / (precision != null ? precision : 0.00000001);
+      return Math.floor((min + (base_number * space)) * rounding_factor) / rounding_factor;
+    };
+  })(this),
+  pick: (function(_this) {
+    return function() {
+      var options;
+      options = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      return options[Math.floor(Math.random() * options.length)];
+    };
+  })(this),
+  string: (function(_this) {
+    return function(length, alphabet) {
+      var i;
+      if (alphabet == null) {
+        alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      }
+      return ((function() {
+        var _i, _ref, _results;
+        _results = [];
+        for (i = _i = 0, _ref = length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
+          _results.push(alphabet[Math.floor(Math.random() * alphabet.length)]);
+        }
+        return _results;
+      })()).join("");
+    };
+  })(this)
+};
+
+var Timer,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+Engine.prototype.timing = {
+  startTimer: (function(_this) {
+    return function(frames, callback, name, repeat) {
+      var timer;
+      if (name == null) {
+        name = null;
+      }
+      if (repeat == null) {
+        repeat = false;
+      }
+      timer = new Timer(frames, callback, repeat);
+      if (name != null) {
+        return _this.named_timers[name] = timer;
+      } else {
+        return _this.unnamed_timers.push(timer);
+      }
+    };
+  })(this),
+  stopTimer: (function(_this) {
+    return function(name) {
+      return _this.timers[name].stop();
+    };
+  })(this)
+};
+
+Timer = (function() {
+  function Timer(frames, callback, repeat) {
+    this.frames = frames;
+    this.callback = callback;
+    this.repeat = repeat;
+    this.stop = __bind(this.stop, this);
+    this.skip = __bind(this.skip, this);
+    this.step = __bind(this.step, this);
+    this.current_frame = 0;
+    this.finished = false;
+  }
+
+  Timer.prototype.step = function() {
+    if (this.current_frame >= this.frames) {
+      this.callback();
+      if (repeat) {
+        return this.current_frame = 0;
+      } else {
+        return this.finished = true;
+      }
+    }
+  };
+
+  Timer.prototype.skip = function(frames) {
+    return this.current_frame += frames;
+  };
+
+  Timer.prototype.stop = function() {
+    return this.finished = true;
+  };
+
+  return Timer;
+
+})();
+
+var Object;
+
+Object = (function() {
+  function Object(engine, name) {
+    this.engine = engine;
+    this.name = name;
+    this.sprite = null;
+    this.instances = [];
+    this.x = 0;
+    this.y = 0;
+  }
+
+  Object.prototype.callEvent = function(name, data) {
+    var event_map, _ref, _ref1;
+    if (data == null) {
+      data = {};
+    }
+    event_map = {
+      mouseover: this.onMouseOver,
+      mouseout: this.onMouseOut,
+      create: this.onCreate,
+      step: this.onStep,
+      click: this.onClick,
+      click_global: this.onClickGlobal
+    };
+    switch (name) {
+      case "draw":
+        this.drawSelf((_ref = data.surface) != null ? _ref : "");
+        return typeof this.onDraw === "function" ? this.onDraw(data) : void 0;
+      default:
+        return (_ref1 = event_map[name]) != null ? _ref1.bind(this)(data) : void 0;
+    }
+  };
+
+  Object.prototype.drawSelf = function(surface) {
+    return this.drawSprite(surface);
+  };
+
+  Object.prototype.drawSprite = function(surface) {
+    var _ref;
+    if (surface == null) {
+      surface = "";
+    }
+    if ((this.sprite != null) && ((_ref = this.draw_sprite) != null ? _ref : "true")) {
+      return this.sprite.draw(this.x, this.y, {}, surface);
+    }
+  };
+
+  Object.prototype.getBoundingBox = function() {
+    var image_size, _ref;
+    image_size = (_ref = this.sprite) != null ? _ref.getSize() : void 0;
+    return {
+      x1: this.x,
+      x2: this.x + (image_size != null ? image_size.width : void 0),
+      y1: this.y,
+      y2: this.y + (image_size != null ? image_size.height : void 0)
+    };
+  };
+
+  Object.prototype.getInstances = function() {
+    return this.instances;
+  };
+
+  Object.prototype.checkPointCollision = function(x, y) {
+    var bounding_box;
+    bounding_box = this.getBoundingBox();
+    return x >= (bounding_box != null ? bounding_box.x1 : void 0) && x <= (bounding_box != null ? bounding_box.x2 : void 0) && y >= (bounding_box != null ? bounding_box.y1 : void 0) && y <= (bounding_box != null ? bounding_box.y2 : void 0);
+  };
+
+  return Object;
+
+})();
+
+var ResourceManager,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+ResourceManager = (function() {
+  function ResourceManager(base_path) {
+    this.base_path = base_path != null ? base_path : "";
+    this.preload = __bind(this.preload, this);
+    this.prepare = __bind(this.prepare, this);
+    this.getImage = __bind(this.getImage, this);
+    this.addSounds = __bind(this.addSounds, this);
+    this.addScripts = __bind(this.addScripts, this);
+    this.addImages = __bind(this.addImages, this);
+    this.addScript = __bind(this.addScript, this);
+    this.addSound = __bind(this.addSound, this);
+    this.addImage = __bind(this.addImage, this);
+    this.joinPath = __bind(this.joinPath, this);
+    this.resources = {
+      stage1_images: [],
+      stage1_audio: [],
+      stage1_scripts: [],
+      images: [],
+      audio: [],
+      scripts: []
+    };
+    this.resource_objects = {
+      images: {},
+      audio: {},
+      scripts: {}
+    };
+  }
+
+  ResourceManager.prototype.joinPath = function(path) {
+    if (this.base_path === "") {
+      return path;
+    } else {
+      return util.stripRight(this.base_path, "/") + "/" + path;
+    }
+  };
+
+  ResourceManager.prototype.addImage = function(path, first_stage) {
+    if (first_stage == null) {
+      first_stage = false;
+    }
+    if (first_stage) {
+      return this.resources.stage1_images.push(this.joinPath(path));
+    } else {
+      return this.resources.images.push(this.joinPath(path));
+    }
+  };
+
+  ResourceManager.prototype.addSound = function(path, first_stage) {
+    if (first_stage == null) {
+      first_stage = false;
+    }
+    if (first_stage) {
+      return this.resources.stage1_audio.push(this.joinPath(path));
+    } else {
+      return this.resources.audio.push(this.joinPath(path));
+    }
+  };
+
+  ResourceManager.prototype.addScript = function(path, first_stage) {
+    if (first_stage == null) {
+      first_stage = false;
+    }
+    if (first_stage) {
+      return this.resources.stage1_scripts.push(this.joinPath(path));
+    } else {
+      return this.resources.scripts.push(this.joinPath(path));
+    }
+  };
+
+  ResourceManager.prototype.addImages = function(paths, first_stage) {
+    var path, _i, _len, _results;
+    if (first_stage == null) {
+      first_stage = false;
+    }
+    _results = [];
+    for (_i = 0, _len = paths.length; _i < _len; _i++) {
+      path = paths[_i];
+      _results.push(this.addImage(path, first_stage));
+    }
+    return _results;
+  };
+
+  ResourceManager.prototype.addScripts = function(paths, first_stage) {
+    var path, _i, _len, _results;
+    if (first_stage == null) {
+      first_stage = false;
+    }
+    _results = [];
+    for (_i = 0, _len = paths.length; _i < _len; _i++) {
+      path = paths[_i];
+      _results.push(this.addScript(path, first_stage));
+    }
+    return _results;
+  };
+
+  ResourceManager.prototype.addSounds = function(paths, first_stage) {
+    var path, _i, _len, _results;
+    if (first_stage == null) {
+      first_stage = false;
+    }
+    _results = [];
+    for (_i = 0, _len = paths.length; _i < _len; _i++) {
+      path = paths[_i];
+      _results.push(this.addSound(path, first_stage));
+    }
+    return _results;
+  };
+
+  ResourceManager.prototype.getImage = function(path) {
+    console.log("objs", this.resource_objects);
+    console.log("path", path);
+    return this.resource_objects.images[this.joinPath(path)];
+  };
+
+  ResourceManager.prototype.prepare = function(finished_callback) {
+    if (finished_callback == null) {
+      finished_callback = (function() {});
+    }
+    return pass;
+  };
+
+  ResourceManager.prototype.preload = function(progress_callback, finished_callback) {
+    var image, obj, _i, _len, _ref;
+    if (progress_callback == null) {
+      progress_callback = (function() {});
+    }
+    if (finished_callback == null) {
+      finished_callback = (function() {});
+    }
+    _ref = this.resources.images;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      image = _ref[_i];
+      obj = document.createElement("img");
+      obj.src = image;
+      this.resource_objects.images[image] = obj;
+    }
+    return finished_callback();
+  };
+
+  return ResourceManager;
+
+})();
+
+var Scene,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+Scene = (function() {
+  function Scene(engine, name) {
+    this.engine = engine;
+    this.name = name;
+    this.changeScene = __bind(this.changeScene, this);
+    this.createInstance = __bind(this.createInstance, this);
+    this.checkMouseCollisions = __bind(this.checkMouseCollisions, this);
+    this.redraw = __bind(this.redraw, this);
+    this.iteration = __bind(this.iteration, this);
+    this.checkActive = __bind(this.checkActive, this);
+    this.removeTargetSurface = __bind(this.removeTargetSurface, this);
+    this.handleClick = __bind(this.handleClick, this);
+    this.addTargetSurface = __bind(this.addTargetSurface, this);
+    this.instances = {};
+    this.surfaces = [];
+    this.dirty = true;
+    this.last_instance_id = 100;
+    this.active = false;
+    this.width = 800;
+    this.height = 600;
+    this.last_width = 800;
+    this.last_height = 600;
+  }
+
+  Scene.prototype.addTargetSurface = function(surface) {
+    this.surfaces.push(surface);
+    this.engine.updateCanvasSize(surface, this.width, this.height);
+    $(surface).on("mousemove.radium", (function(_this) {
+      return function(event) {
+        var canvas_pos;
+        canvas_pos = surface.getBoundingClientRect();
+        _this.mouse_x = (event.clientX - canvas_pos.left) | 0;
+        _this.mouse_y = (event.clientY - canvas_pos.top) | 0;
+        return _this.checkMouseCollisions();
+      };
+    })(this));
+    $(surface).on("click.radium", (function(_this) {
+      return function(event) {
+        return _this.handleClick("click", event);
+      };
+    })(this));
+    $(surface).on("mouseup.radium", (function(_this) {
+      return function(event) {
+        return _this.handleClick("mouse_up", event);
+      };
+    })(this));
+    $(surface).on("mousedown.radium", (function(_this) {
+      return function(event) {
+        return _this.handleClick("mouse_down", event);
+      };
+    })(this));
+    return this.checkActive();
+  };
+
+  Scene.prototype.handleClick = function(event_name, event) {
+    var id, instance, _ref;
+    _ref = this.instances;
+    for (id in _ref) {
+      instance = _ref[id];
+      instance.callEvent("" + event_name + "_global", {
+        x: this.mouse_x,
+        y: this.mouse_y,
+        button: event.which
+      });
+      if (instance.checkPointCollision(this.mouse_x, this.mouse_y)) {
+        instance.callEvent(event_name, {
+          x: this.mouse_x,
+          y: this.mouse_y,
+          button: event.which
+        });
+      }
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    return false;
+  };
+
+  Scene.prototype.removeTargetSurface = function(surface) {
+    this.surfaces = this.surfaces.filter(function(obj) {
+      return obj !== surface;
+    });
+    $(surface).off("mousemove.radium");
+    return this.checkActive();
+  };
+
+  Scene.prototype.checkActive = function() {
+    return this.active = this.surfaces.length > 0;
+  };
+
+  Scene.prototype.iteration = function() {
+    var id, instance, surface, _i, _len, _ref, _ref1, _ref2;
+    if (this.width !== this.last_width || this.height !== this.last_height) {
+      _ref = this.surfaces;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        surface = _ref[_i];
+        this.engine.updateCanvasSize(surface, this.width, this.height);
+      }
+      _ref1 = [this.width, this.height], this.last_width = _ref1[0], this.last_height = _ref1[1];
+    }
+    _ref2 = this.instances;
+    for (id in _ref2) {
+      instance = _ref2[id];
+      if (instance.callEvent("step")) {
+        this.dirty = true;
+      }
+    }
+    if (this.dirty) {
+      this.redraw();
+      return this.dirty = false;
+    }
+  };
+
+  Scene.prototype.redraw = function() {
+    var ctx, id, instance, surface, _i, _len, _ref, _results;
+    _ref = this.surfaces;
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      surface = _ref[_i];
+      ctx = this.engine.getSurface(surface);
+      ctx.clearRect(0, 0, surface.width, surface.height);
+      _results.push((function() {
+        var _ref1, _results1;
+        _ref1 = this.instances;
+        _results1 = [];
+        for (id in _ref1) {
+          instance = _ref1[id];
+          _results1.push(instance.callEvent("draw", {
+            surface: surface
+          }));
+        }
+        return _results1;
+      }).call(this));
+    }
+    return _results;
+  };
+
+  Scene.prototype.checkMouseCollisions = function() {
+    var collision, id, instance, _ref, _results;
+    _ref = this.instances;
+    _results = [];
+    for (id in _ref) {
+      instance = _ref[id];
+      collision = instance.checkPointCollision(this.mouse_x, this.mouse_y);
+      if (collision && !instance._moused_over) {
+        instance.callEvent("mouseover");
+        _results.push(instance._moused_over = true);
+      } else if (!collision && instance._moused_over) {
+        instance.callEvent("mouseout");
+        _results.push(instance._moused_over = false);
+      } else {
+        _results.push(void 0);
+      }
+    }
+    return _results;
+  };
+
+  Scene.prototype.createInstance = function(object, x, y) {
+    var id, instance, real_object;
+    if (x == null) {
+      x = 0;
+    }
+    if (y == null) {
+      y = 0;
+    }
+    id = this.last_instance_id += 1;
+    real_object = this.engine.getObject(object);
+    instance = window.Object.create(real_object);
+    instance.x = x;
+    instance.y = y;
+    instance.id = id;
+    instance.scene = this;
+    this.instances[id] = instance;
+    real_object.instances.push(instance);
+    instance.callEvent("create");
+    return instance;
+  };
+
+  Scene.prototype.changeScene = function(scene) {
+    return pass;
+  };
+
+  return Scene;
+
+})();
+
+var Sound;
+
+Sound = (function() {
+  function Sound() {}
+
+  return Sound;
+
+})();
+
+var Sprite,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+Sprite = (function() {
+  function Sprite(engine, name, image) {
+    var _ref;
+    this.engine = engine;
+    this.name = name;
+    this.image = image;
+    this.getSize = __bind(this.getSize, this);
+    this.draw = __bind(this.draw, this);
+    true;
+    _ref = this.getSize(), this.width = _ref.width, this.height = _ref.height;
+  }
+
+  Sprite.prototype.draw = function(x, y, options, surface) {
+    var _ref;
+    if (options == null) {
+      options = {};
+    }
+    if (surface == null) {
+      surface = "";
+    }
+    surface = this.engine.getSurface(surface);
+    surface.globalAlpha = (_ref = options.alpha) != null ? _ref : 1;
+    return surface.drawImage(this.image, x, y);
+  };
+
+  Sprite.prototype.getSize = function() {
+    return {
+      width: this.image.width,
+      height: this.image.height
+    };
+  };
+
+  return Sprite;
+
+})();
+
+var Tileset, TilesetTile,
+  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
+
+Tileset = (function() {
+  function Tileset(engine, name, image, tile_width, tile_height) {
+    this.engine = engine;
+    this.name = name;
+    this.image = image;
+    this.tile_width = tile_width;
+    this.tile_height = tile_height;
+    this.tile = __bind(this.tile, this);
+    this.tiles = {};
+  }
+
+  Tileset.prototype.tile = function(x, y, precise, w, h) {
+    var key, _ref;
+    if (precise == null) {
+      precise = false;
+    }
+    if (w == null) {
+      w = 0;
+    }
+    if (h == null) {
+      h = 0;
+    }
+    key = ("" + x + "/" + y + "/" + w + "/" + h + "/") + (precise ? 1 : 0);
+    return (_ref = this.tiles[key]) != null ? _ref : tiles[key] = new TilesetTile(this.engine, this, x, y, precise, w, h);
+  };
+
+  return Tileset;
+
+})();
+
+TilesetTile = (function() {
+  function TilesetTile(engine, tileset, x, y, precise, w, h) {
+    this.engine = engine;
+    this.tileset = tileset;
+    this.x = x;
+    this.y = y;
+    this.precise = precise != null ? precise : false;
+    this.w = w != null ? w : 0;
+    this.h = h != null ? h : 0;
+    this.getSize = __bind(this.getSize, this);
+    this.draw = __bind(this.draw, this);
+    pass;
+  }
+
+  TilesetTile.prototype.draw = function(x, y) {
+    var source_h, source_w, source_x, source_y, surface;
+    if (this.precise) {
+      source_x = this.x;
+      source_y = this.y;
+      source_w = this.w;
+      source_h = this.h;
+    } else {
+      source_x = this.x * this.tileset.tile_width;
+      source_y = this.y * this.tileset.tile_height;
+      source_w = this.tileset.tile_width;
+      source_h = this.tileset.tile_height;
+    }
+    surface = this.engine.getSurface();
+    return surface.drawImage(source_x, source_y, source_width, source_height, x, y);
+  };
+
+  TilesetTile.prototype.getSize = function() {
+    if (this.precise) {
+      return {
+        width: this.w,
+        height: this.h
+      };
+    } else {
+      return {
+        width: this.tileset.tile_width,
+        height: this.tileset.tile_height
+      };
+    }
+  };
+
+  return TilesetTile;
+
+})();
+
+var util;
+
+util = {
+  stripRight: function(string, character) {
+    return string.replace(new RegExp(character + "*$", "g"), "");
+  },
+  unpackElement: function(element) {
+    console.log(element);
+    if (element instanceof jQuery) {
+      return element[0];
+    } else {
+      return element;
+    }
+  }
+};
+
+window.ResourceManager = ResourceManager;
+
+window.Engine = Engine;
+})();
 /*!
  * jQuery JavaScript Library v2.1.1
  * http://jquery.com/
@@ -9220,1805 +11022,3 @@ this.createjs=this.createjs||{},function(){"use strict";var a=createjs.PreloadJS
 
 this.createjs=this.createjs||{},function(){var a=createjs.SoundJS=createjs.SoundJS||{};a.version="0.5.2",a.buildDate="Thu, 12 Dec 2013 23:33:37 GMT"}(),this.createjs=this.createjs||{},function(){"use strict";var a=function(){},b=a.prototype;a.initialize=function(a){a.addEventListener=b.addEventListener,a.on=b.on,a.removeEventListener=a.off=b.removeEventListener,a.removeAllEventListeners=b.removeAllEventListeners,a.hasEventListener=b.hasEventListener,a.dispatchEvent=b.dispatchEvent,a._dispatchEvent=b._dispatchEvent,a.willTrigger=b.willTrigger},b._listeners=null,b._captureListeners=null,b.initialize=function(){},b.addEventListener=function(a,b,c){var d;d=c?this._captureListeners=this._captureListeners||{}:this._listeners=this._listeners||{};var e=d[a];return e&&this.removeEventListener(a,b,c),e=d[a],e?e.push(b):d[a]=[b],b},b.on=function(a,b,c,d,e,f){return b.handleEvent&&(c=c||b,b=b.handleEvent),c=c||this,this.addEventListener(a,function(a){b.call(c,a,e),d&&a.remove()},f)},b.removeEventListener=function(a,b,c){var d=c?this._captureListeners:this._listeners;if(d){var e=d[a];if(e)for(var f=0,g=e.length;g>f;f++)if(e[f]==b){1==g?delete d[a]:e.splice(f,1);break}}},b.off=b.removeEventListener,b.removeAllEventListeners=function(a){a?(this._listeners&&delete this._listeners[a],this._captureListeners&&delete this._captureListeners[a]):this._listeners=this._captureListeners=null},b.dispatchEvent=function(a,b){if("string"==typeof a){var c=this._listeners;if(!c||!c[a])return!1;a=new createjs.Event(a)}if(a.target=b||this,a.bubbles&&this.parent){for(var d=this,e=[d];d.parent;)e.push(d=d.parent);var f,g=e.length;for(f=g-1;f>=0&&!a.propagationStopped;f--)e[f]._dispatchEvent(a,1+(0==f));for(f=1;g>f&&!a.propagationStopped;f++)e[f]._dispatchEvent(a,3)}else this._dispatchEvent(a,2);return a.defaultPrevented},b.hasEventListener=function(a){var b=this._listeners,c=this._captureListeners;return!!(b&&b[a]||c&&c[a])},b.willTrigger=function(a){for(var b=this;b;){if(b.hasEventListener(a))return!0;b=b.parent}return!1},b.toString=function(){return"[EventDispatcher]"},b._dispatchEvent=function(a,b){var c,d=1==b?this._captureListeners:this._listeners;if(a&&d){var e=d[a.type];if(!e||!(c=e.length))return;a.currentTarget=this,a.eventPhase=b,a.removed=!1,e=e.slice();for(var f=0;c>f&&!a.immediatePropagationStopped;f++){var g=e[f];g.handleEvent?g.handleEvent(a):g(a),a.removed&&(this.off(a.type,g,1==b),a.removed=!1)}}},createjs.EventDispatcher=a}(),this.createjs=this.createjs||{},function(){"use strict";var a=function(a,b,c){this.initialize(a,b,c)},b=a.prototype;b.type=null,b.target=null,b.currentTarget=null,b.eventPhase=0,b.bubbles=!1,b.cancelable=!1,b.timeStamp=0,b.defaultPrevented=!1,b.propagationStopped=!1,b.immediatePropagationStopped=!1,b.removed=!1,b.initialize=function(a,b,c){this.type=a,this.bubbles=b,this.cancelable=c,this.timeStamp=(new Date).getTime()},b.preventDefault=function(){this.defaultPrevented=!0},b.stopPropagation=function(){this.propagationStopped=!0},b.stopImmediatePropagation=function(){this.immediatePropagationStopped=this.propagationStopped=!0},b.remove=function(){this.removed=!0},b.clone=function(){return new a(this.type,this.bubbles,this.cancelable)},b.toString=function(){return"[Event (type="+this.type+")]"},createjs.Event=a}(),this.createjs=this.createjs||{},function(){"use strict";createjs.indexOf=function(a,b){for(var c=0,d=a.length;d>c;c++)if(b===a[c])return c;return-1}}(),this.createjs=this.createjs||{},function(){"use strict";createjs.proxy=function(a,b){var c=Array.prototype.slice.call(arguments,2);return function(){return a.apply(b,Array.prototype.slice.call(arguments,0).concat(c))}}}(),this.createjs=this.createjs||{},function(){"use strict";function a(){throw"Sound cannot be instantiated"}function b(a,b){this.init(a,b)}function c(){this.isDefault=!0,this.addEventListener=this.removeEventListener=this.removeAllEventListeners=this.dispatchEvent=this.hasEventListener=this._listeners=this._interrupt=this._playFailed=this.pause=this.resume=this.play=this._beginPlaying=this._cleanUp=this.stop=this.setMasterVolume=this.setVolume=this.mute=this.setMute=this.getMute=this.setPan=this.getPosition=this.setPosition=this.playFailed=function(){return!1},this.getVolume=this.getPan=this.getDuration=function(){return 0},this.playState=a.PLAY_FAILED,this.toString=function(){return"[Sound Default Sound Instance]"}}function d(){}var e=a;e.DELIMITER="|",e.INTERRUPT_ANY="any",e.INTERRUPT_EARLY="early",e.INTERRUPT_LATE="late",e.INTERRUPT_NONE="none",e.PLAY_INITED="playInited",e.PLAY_SUCCEEDED="playSucceeded",e.PLAY_INTERRUPTED="playInterrupted",e.PLAY_FINISHED="playFinished",e.PLAY_FAILED="playFailed",e.SUPPORTED_EXTENSIONS=["mp3","ogg","mpeg","wav","m4a","mp4","aiff","wma","mid"],e.EXTENSION_MAP={m4a:"mp4"},e.FILE_PATTERN=/^(?:(\w+:)\/{2}(\w+(?:\.\w+)*\/?))?([/.]*?(?:[^?]+)?\/)?((?:[^/?]+)\.(\w+))(?:\?(\S+)?)?$/,e.defaultInterruptBehavior=e.INTERRUPT_NONE,e.alternateExtensions=[],e._lastID=0,e.activePlugin=null,e._pluginsRegistered=!1,e._masterVolume=1,e._masterMute=!1,e._instances=[],e._idHash={},e._preloadHash={},e._defaultSoundInstance=null,e.addEventListener=null,e.removeEventListener=null,e.removeAllEventListeners=null,e.dispatchEvent=null,e.hasEventListener=null,e._listeners=null,createjs.EventDispatcher.initialize(e),e._sendFileLoadEvent=function(a){if(e._preloadHash[a])for(var b=0,c=e._preloadHash[a].length;c>b;b++){var d=e._preloadHash[a][b];if(e._preloadHash[a][b]=!0,e.hasEventListener("fileload")){var f=new createjs.Event("fileload");f.src=d.src,f.id=d.id,f.data=d.data,e.dispatchEvent(f)}}},e.getPreloadHandlers=function(){return{callback:createjs.proxy(e.initLoad,e),types:["sound"],extensions:e.SUPPORTED_EXTENSIONS}},e.registerPlugin=function(a){try{console.log("createjs.Sound.registerPlugin has been deprecated. Please use registerPlugins.")}catch(b){}return e._registerPlugin(a)},e._registerPlugin=function(a){return e._pluginsRegistered=!0,null==a?!1:a.isSupported()?(e.activePlugin=new a,!0):!1},e.registerPlugins=function(a){for(var b=0,c=a.length;c>b;b++){var d=a[b];if(e._registerPlugin(d))return!0}return!1},e.initializeDefaultPlugins=function(){return null!=e.activePlugin?!0:e._pluginsRegistered?!1:e.registerPlugins([createjs.WebAudioPlugin,createjs.HTMLAudioPlugin])?!0:!1},e.isReady=function(){return null!=e.activePlugin},e.getCapabilities=function(){return null==e.activePlugin?null:e.activePlugin._capabilities},e.getCapability=function(a){return null==e.activePlugin?null:e.activePlugin._capabilities[a]},e.initLoad=function(a,b,c,d,f){a=a.replace(f,"");var g=e.registerSound(a,c,d,!1,f);return null==g?!1:g},e.registerSound=function(a,c,d,f,g){if(!e.initializeDefaultPlugins())return!1;if(a instanceof Object&&(g=c,c=a.id,d=a.data,a=a.src),e.alternateExtensions.length)var h=e._parsePath2(a,"sound",c,d);else var h=e._parsePath(a,"sound",c,d);if(null==h)return!1;null!=g&&(a=g+a,h.src=g+h.src),null!=c&&(e._idHash[c]=h.src);var i=null;null!=d&&(isNaN(d.channels)?isNaN(d)||(i=parseInt(d)):i=parseInt(d.channels));var j=e.activePlugin.register(h.src,i);if(null!=j&&(null!=j.numChannels&&(i=j.numChannels),b.create(h.src,i),null!=d&&isNaN(d)?d.channels=h.data.channels=i||b.maxPerChannel():d=h.data=i||b.maxPerChannel(),null!=j.tag?h.tag=j.tag:j.src&&(h.src=j.src),null!=j.completeHandler&&(h.completeHandler=j.completeHandler),j.type&&(h.type=j.type)),0!=f)if(e._preloadHash[h.src]||(e._preloadHash[h.src]=[]),e._preloadHash[h.src].push({src:a,id:c,data:d}),1==e._preloadHash[h.src].length)e.activePlugin.preload(h.src,j);else if(1==e._preloadHash[h.src][0])return!0;return h},e.registerManifest=function(a,b){for(var c=[],d=0,e=a.length;e>d;d++)c[d]=createjs.Sound.registerSound(a[d].src,a[d].id,a[d].data,a[d].preload,b);return c},e.removeSound=function(a,c){if(null==e.activePlugin)return!1;if(a instanceof Object&&(a=a.src),a=e._getSrcById(a),e.alternateExtensions.length)var d=e._parsePath2(a);else var d=e._parsePath(a);if(null==d)return!1;null!=c&&(d.src=c+d.src),a=d.src;for(var f in e._idHash)e._idHash[f]==a&&delete e._idHash[f];return b.removeSrc(a),delete e._preloadHash[a],e.activePlugin.removeSound(a),!0},e.removeManifest=function(a,b){for(var c=[],d=0,e=a.length;e>d;d++)c[d]=createjs.Sound.removeSound(a[d].src,b);return c},e.removeAllSounds=function(){e._idHash={},e._preloadHash={},b.removeAll(),e.activePlugin.removeAllSounds()},e.loadComplete=function(a){if(e.alternateExtensions.length)var b=e._parsePath2(a,"sound");else var b=e._parsePath(a,"sound");return a=b?e._getSrcById(b.src):e._getSrcById(a),1==e._preloadHash[a][0]},e._parsePath=function(a,b,c,d){"string"!=typeof a&&(a=a.toString());var f=a.split(e.DELIMITER);if(f.length>1)try{console.log('createjs.Sound.DELIMITER "|" loading approach has been deprecated. Please use the new alternateExtensions property.')}catch(g){}for(var h={type:b||"sound",id:c,data:d},i=e.getCapabilities(),j=0,k=f.length;k>j;j++){var l=f[j],m=l.match(e.FILE_PATTERN);if(null==m)return!1;var n=m[4],o=m[5];if(i[o]&&createjs.indexOf(e.SUPPORTED_EXTENSIONS,o)>-1)return h.name=n,h.src=l,h.extension=o,h}return null},e._parsePath2=function(a,b,c,d){"string"!=typeof a&&(a=a.toString());var f=a.match(e.FILE_PATTERN);if(null==f)return!1;for(var g=f[4],h=f[5],i=e.getCapabilities(),j=0;!i[h];)if(h=e.alternateExtensions[j++],j>e.alternateExtensions.length)return null;a=a.replace("."+f[5],"."+h);var k={type:b||"sound",id:c,data:d};return k.name=g,k.src=a,k.extension=h,k},e.play=function(a,b,c,d,f,g,h){var i=e.createInstance(a),j=e._playInstance(i,b,c,d,f,g,h);return j||i.playFailed(),i},e.createInstance=function(c){if(!e.initializeDefaultPlugins())return e._defaultSoundInstance;if(c=e._getSrcById(c),e.alternateExtensions.length)var d=e._parsePath2(c,"sound");else var d=e._parsePath(c,"sound");var f=null;return null!=d&&null!=d.src?(b.create(d.src),f=e.activePlugin.create(d.src)):f=a._defaultSoundInstance,f.uniqueId=e._lastID++,f},e.setVolume=function(a){if(null==Number(a))return!1;if(a=Math.max(0,Math.min(1,a)),e._masterVolume=a,!this.activePlugin||!this.activePlugin.setVolume||!this.activePlugin.setVolume(a))for(var b=this._instances,c=0,d=b.length;d>c;c++)b[c].setMasterVolume(a)},e.getVolume=function(){return e._masterVolume},e.setMute=function(a){if(null==a||void 0==a)return!1;if(this._masterMute=a,!this.activePlugin||!this.activePlugin.setMute||!this.activePlugin.setMute(a))for(var b=this._instances,c=0,d=b.length;d>c;c++)b[c].setMasterMute(a);return!0},e.getMute=function(){return this._masterMute},e.stop=function(){for(var a=this._instances,b=a.length;b--;)a[b].stop()},e._playInstance=function(a,b,c,d,f,g,h){if(b instanceof Object&&(c=b.delay,d=b.offset,f=b.loop,g=b.volume,h=b.pan,b=b.interrupt),b=b||e.defaultInterruptBehavior,null==c&&(c=0),null==d&&(d=a.getPosition()),null==f&&(f=0),null==g&&(g=a.volume),null==h&&(h=a.pan),0==c){var i=e._beginPlaying(a,b,d,f,g,h);if(!i)return!1}else{var j=setTimeout(function(){e._beginPlaying(a,b,d,f,g,h)},c);a._delayTimeoutId=j}return this._instances.push(a),!0},e._beginPlaying=function(a,c,d,e,f,g){if(!b.add(a,c))return!1;var h=a._beginPlaying(d,e,f,g);if(!h){var i=createjs.indexOf(this._instances,a);return i>-1&&this._instances.splice(i,1),!1}return!0},e._getSrcById=function(a){return null==e._idHash||null==e._idHash[a]?a:e._idHash[a]},e._playFinished=function(a){b.remove(a);var c=createjs.indexOf(this._instances,a);c>-1&&this._instances.splice(c,1)},createjs.Sound=a,b.channels={},b.create=function(a,c){var d=b.get(a);return null==d?(b.channels[a]=new b(a,c),!0):!1},b.removeSrc=function(a){var c=b.get(a);return null==c?!1:(c.removeAll(),delete b.channels[a],!0)},b.removeAll=function(){for(var a in b.channels)b.channels[a].removeAll();b.channels={}},b.add=function(a,c){var d=b.get(a.src);return null==d?!1:d.add(a,c)},b.remove=function(a){var c=b.get(a.src);return null==c?!1:(c.remove(a),!0)},b.maxPerChannel=function(){return f.maxDefault},b.get=function(a){return b.channels[a]};var f=b.prototype;f.src=null,f.max=null,f.maxDefault=100,f.length=0,f.init=function(a,b){this.src=a,this.max=b||this.maxDefault,-1==this.max&&(this.max=this.maxDefault),this._instances=[]},f.get=function(a){return this._instances[a]},f.add=function(a,b){return this.getSlot(b,a)?(this._instances.push(a),this.length++,!0):!1},f.remove=function(a){var b=createjs.indexOf(this._instances,a);return-1==b?!1:(this._instances.splice(b,1),this.length--,!0)},f.removeAll=function(){for(var a=this.length-1;a>=0;a--)this._instances[a].stop()},f.getSlot=function(b){for(var c,d,e=0,f=this.max;f>e;e++){if(c=this.get(e),null==c)return!0;(b!=a.INTERRUPT_NONE||c.playState==a.PLAY_FINISHED)&&(0!=e?c.playState==a.PLAY_FINISHED||c.playState==a.PLAY_INTERRUPTED||c.playState==a.PLAY_FAILED?d=c:(b==a.INTERRUPT_EARLY&&c.getPosition()<d.getPosition()||b==a.INTERRUPT_LATE&&c.getPosition()>d.getPosition())&&(d=c):d=c)}return null!=d?(d._interrupt(),this.remove(d),!0):!1},f.toString=function(){return"[Sound SoundChannel]"},a._defaultSoundInstance=new c,d.init=function(){var a=window.navigator.userAgent;d.isFirefox=a.indexOf("Firefox")>-1,d.isOpera=null!=window.opera,d.isChrome=a.indexOf("Chrome")>-1,d.isIOS=a.indexOf("iPod")>-1||a.indexOf("iPhone")>-1||a.indexOf("iPad")>-1,d.isAndroid=a.indexOf("Android")>-1,d.isBlackberry=a.indexOf("Blackberry")>-1},d.init(),createjs.Sound.BrowserDetect=d}(),this.createjs=this.createjs||{},function(){"use strict";function a(){this._init()}var b=a;b._capabilities=null,b.isSupported=function(){var a=createjs.Sound.BrowserDetect.isIOS||createjs.Sound.BrowserDetect.isAndroid||createjs.Sound.BrowserDetect.isBlackberry;return"file:"!=location.protocol||a||this._isFileXHRSupported()?(b._generateCapabilities(),null==b.context?!1:!0):!1},b._isFileXHRSupported=function(){var a=!0,b=new XMLHttpRequest;try{b.open("GET","fail.fail",!1)}catch(c){return a=!1}b.onerror=function(){a=!1},b.onload=function(){a=404==this.status||200==this.status||0==this.status&&""!=this.response};try{b.send()}catch(c){a=!1}return a},b._generateCapabilities=function(){if(null==b._capabilities){var a=document.createElement("audio");if(null==a.canPlayType)return null;if(window.webkitAudioContext)b.context=new webkitAudioContext;else{if(!window.AudioContext)return null;b.context=new AudioContext}b._compatibilitySetUp(),b.playEmptySound(),b._capabilities={panning:!0,volume:!0,tracks:-1};for(var c=createjs.Sound.SUPPORTED_EXTENSIONS,d=createjs.Sound.EXTENSION_MAP,e=0,f=c.length;f>e;e++){var g=c[e],h=d[g]||g;b._capabilities[g]="no"!=a.canPlayType("audio/"+g)&&""!=a.canPlayType("audio/"+g)||"no"!=a.canPlayType("audio/"+h)&&""!=a.canPlayType("audio/"+h)}b.context.destination.numberOfChannels<2&&(b._capabilities.panning=!1),b.dynamicsCompressorNode=b.context.createDynamicsCompressor(),b.dynamicsCompressorNode.connect(b.context.destination),b.gainNode=b.context.createGain(),b.gainNode.connect(b.dynamicsCompressorNode)}},b._compatibilitySetUp=function(){if(!b.context.createGain){b.context.createGain=b.context.createGainNode;var a=b.context.createBufferSource();a.__proto__.start=a.__proto__.noteGrainOn,a.__proto__.stop=a.__proto__.noteOff,this._panningModel=0}},b.playEmptySound=function(){var a=this.context.createBuffer(1,1,22050),b=this.context.createBufferSource();b.buffer=a,b.connect(this.context.destination),b.start(0,0,0)};var c=a.prototype;c._capabilities=null,c._volume=1,c.context=null,c._panningModel="equalpower",c.dynamicsCompressorNode=null,c.gainNode=null,c._arrayBuffers=null,c._init=function(){this._capabilities=b._capabilities,this._arrayBuffers={},this.context=b.context,this.gainNode=b.gainNode,this.dynamicsCompressorNode=b.dynamicsCompressorNode},c.register=function(a){this._arrayBuffers[a]=!0;var b=new createjs.WebAudioPlugin.Loader(a,this);return{tag:b}},c.isPreloadStarted=function(a){return null!=this._arrayBuffers[a]},c.isPreloadComplete=function(a){return!(null==this._arrayBuffers[a]||1==this._arrayBuffers[a])},c.removeSound=function(a){delete this._arrayBuffers[a]},c.removeAllSounds=function(){this._arrayBuffers={}},c.addPreloadResults=function(a,b){this._arrayBuffers[a]=b},c._handlePreloadComplete=function(){createjs.Sound._sendFileLoadEvent(this.src)},c.preload=function(a){this._arrayBuffers[a]=!0;var b=new createjs.WebAudioPlugin.Loader(a,this);b.onload=this._handlePreloadComplete,b.load()},c.create=function(a){return this.isPreloadStarted(a)||this.preload(a),new createjs.WebAudioPlugin.SoundInstance(a,this)},c.setVolume=function(a){return this._volume=a,this._updateVolume(),!0},c._updateVolume=function(){var a=createjs.Sound._masterMute?0:this._volume;a!=this.gainNode.gain.value&&(this.gainNode.gain.value=a)},c.getVolume=function(){return this._volume},c.setMute=function(){return this._updateVolume(),!0},c.toString=function(){return"[WebAudioPlugin]"},createjs.WebAudioPlugin=a}(),function(){"use strict";function a(a,b){this._init(a,b)}var b=a.prototype=new createjs.EventDispatcher;b.src=null,b.uniqueId=-1,b.playState=null,b._owner=null,b._offset=0,b._delay=0,b._volume=1;try{Object.defineProperty(b,"volume",{get:function(){return this._volume},set:function(a){return null==Number(a)?!1:(a=Math.max(0,Math.min(1,a)),this._volume=a,this._updateVolume(),void 0)}})}catch(c){}b._pan=0;try{Object.defineProperty(b,"pan",{get:function(){return this._pan},set:function(a){return this._owner._capabilities.panning&&null!=Number(a)?(a=Math.max(-1,Math.min(1,a)),this._pan=a,this.panNode.setPosition(a,0,-.5),void 0):!1}})}catch(c){}b._duration=0,b._remainingLoops=0,b._delayTimeoutId=null,b._soundCompleteTimeout=null,b.gainNode=null,b.panNode=null,b.sourceNode=null,b._sourceNodeNext=null,b._muted=!1,b._paused=!1,b._startTime=0,b._endedHandler=null,b._sendEvent=function(a){var b=new createjs.Event(a);this.dispatchEvent(b)},b._init=function(a,b){this._owner=b,this.src=a,this.gainNode=this._owner.context.createGain(),this.panNode=this._owner.context.createPanner(),this.panNode.panningModel=this._owner._panningModel,this.panNode.connect(this.gainNode),this._owner.isPreloadComplete(this.src)&&(this._duration=1e3*this._owner._arrayBuffers[this.src].duration),this._endedHandler=createjs.proxy(this._handleSoundComplete,this)},b._cleanUp=function(){this.sourceNode&&this.playState==createjs.Sound.PLAY_SUCCEEDED&&(this.sourceNode=this._cleanUpAudioNode(this.sourceNode),this._sourceNodeNext=this._cleanUpAudioNode(this._sourceNodeNext)),0!=this.gainNode.numberOfOutputs&&this.gainNode.disconnect(0),clearTimeout(this._delayTimeoutId),clearTimeout(this._soundCompleteTimeout),this._startTime=0,null!=window.createjs&&createjs.Sound._playFinished(this)},b._cleanUpAudioNode=function(a){return a&&(a.stop(0),a.disconnect(this.panNode),a=null),a},b._interrupt=function(){this._cleanUp(),this.playState=createjs.Sound.PLAY_INTERRUPTED,this._paused=!1,this._sendEvent("interrupted")},b._handleSoundReady=function(){if(null!=window.createjs){if(1e3*this._offset>this.getDuration())return this.playFailed(),void 0;this._offset<0&&(this._offset=0),this.playState=createjs.Sound.PLAY_SUCCEEDED,this._paused=!1,this.gainNode.connect(this._owner.gainNode);var a=this._owner._arrayBuffers[this.src].duration;this.sourceNode=this._createAndPlayAudioNode(this._owner.context.currentTime-a,this._offset),this._duration=1e3*a,this._startTime=this.sourceNode.startTime-this._offset,this._soundCompleteTimeout=setTimeout(this._endedHandler,1e3*(a-this._offset)),0!=this._remainingLoops&&(this._sourceNodeNext=this._createAndPlayAudioNode(this._startTime,0))}},b._createAndPlayAudioNode=function(a,b){var c=this._owner.context.createBufferSource();return c.buffer=this._owner._arrayBuffers[this.src],c.connect(this.panNode),this._owner.context.currentTime,c.startTime=a+c.buffer.duration,c.start(c.startTime,b,c.buffer.duration-b),c},b.play=function(a,b,c,d,e,f){this._cleanUp(),createjs.Sound._playInstance(this,a,b,c,d,e,f)},b._beginPlaying=function(a,b,c,d){return null!=window.createjs&&this.src?(this._offset=a/1e3,this._remainingLoops=b,this.volume=c,this.pan=d,this._owner.isPreloadComplete(this.src)?(this._handleSoundReady(null),this._sendEvent("succeeded"),1):(this.playFailed(),void 0)):void 0},b.pause=function(){return this._paused||this.playState!=createjs.Sound.PLAY_SUCCEEDED?!1:(this._paused=!0,this._offset=this._owner.context.currentTime-this._startTime,this._cleanUpAudioNode(this.sourceNode),this._cleanUpAudioNode(this._sourceNodeNext),0!=this.gainNode.numberOfOutputs&&this.gainNode.disconnect(),clearTimeout(this._delayTimeoutId),clearTimeout(this._soundCompleteTimeout),!0)},b.resume=function(){return this._paused?(this._handleSoundReady(null),!0):!1},b.stop=function(){return this._cleanUp(),this.playState=createjs.Sound.PLAY_FINISHED,this._offset=0,!0},b.setVolume=function(a){return this.volume=a,!0},b._updateVolume=function(){var a=this._muted?0:this._volume;return a!=this.gainNode.gain.value?(this.gainNode.gain.value=a,!0):!1},b.getVolume=function(){return this.volume},b.setMute=function(a){return null==a||void 0==a?!1:(this._muted=a,this._updateVolume(),!0)},b.getMute=function(){return this._muted},b.setPan=function(a){return this.pan=a,this.pan!=a?!1:void 0},b.getPan=function(){return this.pan},b.getPosition=function(){if(this._paused||null==this.sourceNode)var a=this._offset;else var a=this._owner.context.currentTime-this._startTime;return 1e3*a},b.setPosition=function(a){return this._offset=a/1e3,this.sourceNode&&this.playState==createjs.Sound.PLAY_SUCCEEDED&&(this._cleanUpAudioNode(this.sourceNode),this._cleanUpAudioNode(this._sourceNodeNext),clearTimeout(this._soundCompleteTimeout)),this._paused||this.playState!=createjs.Sound.PLAY_SUCCEEDED||this._handleSoundReady(null),!0},b.getDuration=function(){return this._duration},b._handleSoundComplete=function(){return this._offset=0,0!=this._remainingLoops?(this._remainingLoops--,this._sourceNodeNext?(this._cleanUpAudioNode(this.sourceNode),this.sourceNode=this._sourceNodeNext,this._startTime=this.sourceNode.startTime,this._sourceNodeNext=this._createAndPlayAudioNode(this._startTime,0),this._soundCompleteTimeout=setTimeout(this._endedHandler,this._duration)):this._handleSoundReady(null),this._sendEvent("loop"),void 0):(null!=window.createjs&&(this._cleanUp(),this.playState=createjs.Sound.PLAY_FINISHED,this._sendEvent("complete")),void 0)},b.playFailed=function(){null!=window.createjs&&(this._cleanUp(),this.playState=createjs.Sound.PLAY_FAILED,this._sendEvent("failed"))},b.toString=function(){return"[WebAudioPlugin SoundInstance]"},createjs.WebAudioPlugin.SoundInstance=a}(),function(){"use strict";function a(a,b){this._init(a,b)}var b=a.prototype;b.request=null,b.owner=null,b.progress=-1,b.src=null,b.originalSrc=null,b.result=null,b.onload=null,b.onprogress=null,b.onError=null,b._init=function(a,b){this.src=a,this.originalSrc=a,this.owner=b},b.load=function(a){null!=a&&(this.src=a),this.request=new XMLHttpRequest,this.request.open("GET",this.src,!0),this.request.responseType="arraybuffer",this.request.onload=createjs.proxy(this.handleLoad,this),this.request.onError=createjs.proxy(this.handleError,this),this.request.onprogress=createjs.proxy(this.handleProgress,this),this.request.send()},b.handleProgress=function(a,b){this.progress=a/b,null!=this.onprogress&&this.onprogress({loaded:a,total:b,progress:this.progress})},b.handleLoad=function(){this.owner.context.decodeAudioData(this.request.response,createjs.proxy(this.handleAudioDecoded,this),createjs.proxy(this.handleError,this))},b.handleAudioDecoded=function(a){this.progress=1,this.result=a,this.src=this.originalSrc,this.owner.addPreloadResults(this.src,this.result),this.onload&&this.onload()},b.handleError=function(a){this.owner.removeSound(this.src),this.onerror&&this.onerror(a)},b.toString=function(){return"[WebAudioPlugin Loader]"},createjs.WebAudioPlugin.Loader=a}(),this.createjs=this.createjs||{},function(){"use strict";function a(){this._init()}var b=a;b.MAX_INSTANCES=30,b._AUDIO_READY="canplaythrough",b._AUDIO_ENDED="ended",b._AUDIO_SEEKED="seeked",b._AUDIO_STALLED="stalled",b._capabilities=null,b.enableIOS=!1,b.isSupported=function(){if(createjs.Sound.BrowserDetect.isIOS&&!b.enableIOS)return!1;b._generateCapabilities();var a=b.tag;return null==a||null==b._capabilities?!1:!0},b._generateCapabilities=function(){if(null==b._capabilities){var a=b.tag=document.createElement("audio");if(null==a.canPlayType)return null;b._capabilities={panning:!0,volume:!0,tracks:-1};for(var c=createjs.Sound.SUPPORTED_EXTENSIONS,d=createjs.Sound.EXTENSION_MAP,e=0,f=c.length;f>e;e++){var g=c[e],h=d[g]||g;b._capabilities[g]="no"!=a.canPlayType("audio/"+g)&&""!=a.canPlayType("audio/"+g)||"no"!=a.canPlayType("audio/"+h)&&""!=a.canPlayType("audio/"+h)}}};var c=a.prototype;c._capabilities=null,c._audioSources=null,c.defaultNumChannels=2,c.loadedHandler=null,c._init=function(){this._capabilities=b._capabilities,this._audioSources={}},c.register=function(a,b){this._audioSources[a]=!0;for(var c=createjs.HTMLAudioPlugin.TagPool.get(a),d=null,e=b||this.defaultNumChannels,f=0;e>f;f++)d=this._createTag(a),c.add(d);if(d.id=a,this.loadedHandler=createjs.proxy(this._handleTagLoad,this),d.addEventListener&&d.addEventListener("canplaythrough",this.loadedHandler),null==d.onreadystatechange)d.onreadystatechange=this.loadedHandler;else{var g=d.onreadystatechange;d.onreadystatechange=function(){g(),this.loadedHandler()}}return{tag:d,numChannels:e}},c._handleTagLoad=function(a){a.target.removeEventListener&&a.target.removeEventListener("canplaythrough",this.loadedHandler),a.target.onreadystatechange=null,a.target.src!=a.target.id&&createjs.HTMLAudioPlugin.TagPool.checkSrc(a.target.id)},c._createTag=function(a){var b=document.createElement("audio");return b.autoplay=!1,b.preload="none",b.src=a,b},c.removeSound=function(a){delete this._audioSources[a],createjs.HTMLAudioPlugin.TagPool.remove(a)},c.removeAllSounds=function(){this._audioSources={},createjs.HTMLAudioPlugin.TagPool.removeAll()},c.create=function(a){if(!this.isPreloadStarted(a)){var b=createjs.HTMLAudioPlugin.TagPool.get(a),c=this._createTag(a);c.id=a,b.add(c),this.preload(a,{tag:c})}return new createjs.HTMLAudioPlugin.SoundInstance(a,this)},c.isPreloadStarted=function(a){return null!=this._audioSources[a]},c.preload=function(a,b){this._audioSources[a]=!0,new createjs.HTMLAudioPlugin.Loader(a,b.tag)},c.toString=function(){return"[HTMLAudioPlugin]"},createjs.HTMLAudioPlugin=a}(),function(){"use strict";function a(a,b){this._init(a,b)}var b=a.prototype=new createjs.EventDispatcher;b.src=null,b.uniqueId=-1,b.playState=null,b._owner=null,b.loaded=!1,b._offset=0,b._delay=0,b._volume=1;try{Object.defineProperty(b,"volume",{get:function(){return this._volume},set:function(a){null!=Number(a)&&(a=Math.max(0,Math.min(1,a)),this._volume=a,this._updateVolume())}})}catch(c){}b.pan=0,b._duration=0,b._remainingLoops=0,b._delayTimeoutId=null,b.tag=null,b._muted=!1,b._paused=!1,b._endedHandler=null,b._readyHandler=null,b._stalledHandler=null,b.loopHandler=null,b._init=function(a,b){this.src=a,this._owner=b,this._endedHandler=createjs.proxy(this._handleSoundComplete,this),this._readyHandler=createjs.proxy(this._handleSoundReady,this),this._stalledHandler=createjs.proxy(this._handleSoundStalled,this),this.loopHandler=createjs.proxy(this.handleSoundLoop,this)},b._sendEvent=function(a){var b=new createjs.Event(a);this.dispatchEvent(b)},b._cleanUp=function(){var a=this.tag;if(null!=a){a.pause(),a.removeEventListener(createjs.HTMLAudioPlugin._AUDIO_ENDED,this._endedHandler,!1),a.removeEventListener(createjs.HTMLAudioPlugin._AUDIO_READY,this._readyHandler,!1),a.removeEventListener(createjs.HTMLAudioPlugin._AUDIO_SEEKED,this.loopHandler,!1);try{a.currentTime=0}catch(b){}createjs.HTMLAudioPlugin.TagPool.setInstance(this.src,a),this.tag=null}clearTimeout(this._delayTimeoutId),null!=window.createjs&&createjs.Sound._playFinished(this)},b._interrupt=function(){null!=this.tag&&(this.playState=createjs.Sound.PLAY_INTERRUPTED,this._cleanUp(),this._paused=!1,this._sendEvent("interrupted"))},b.play=function(a,b,c,d,e,f){this._cleanUp(),createjs.Sound._playInstance(this,a,b,c,d,e,f)},b._beginPlaying=function(a,b,c,d){if(null==window.createjs)return-1;var e=this.tag=createjs.HTMLAudioPlugin.TagPool.getInstance(this.src);return null==e?(this.playFailed(),-1):(e.addEventListener(createjs.HTMLAudioPlugin._AUDIO_ENDED,this._endedHandler,!1),this._offset=a,this.volume=c,this.pan=d,this._updateVolume(),this._remainingLoops=b,4!==e.readyState?(e.addEventListener(createjs.HTMLAudioPlugin._AUDIO_READY,this._readyHandler,!1),e.addEventListener(createjs.HTMLAudioPlugin._AUDIO_STALLED,this._stalledHandler,!1),e.preload="auto",e.load()):this._handleSoundReady(null),this._sendEvent("succeeded"),1)},b._handleSoundStalled=function(){this._cleanUp(),this._sendEvent("failed")},b._handleSoundReady=function(){if(null!=window.createjs){if(this._duration=1e3*this.tag.duration,this.playState=createjs.Sound.PLAY_SUCCEEDED,this._paused=!1,this.tag.removeEventListener(createjs.HTMLAudioPlugin._AUDIO_READY,this._readyHandler,!1),this._offset>=this.getDuration())return this.playFailed(),void 0;this._offset>0&&(this.tag.currentTime=.001*this._offset),-1==this._remainingLoops&&(this.tag.loop=!0),0!=this._remainingLoops&&(this.tag.addEventListener(createjs.HTMLAudioPlugin._AUDIO_SEEKED,this.loopHandler,!1),this.tag.loop=!0),this.tag.play()}},b.pause=function(){return this._paused||this.playState!=createjs.Sound.PLAY_SUCCEEDED||null==this.tag?!1:(this._paused=!0,this.tag.pause(),clearTimeout(this._delayTimeoutId),!0)},b.resume=function(){return this._paused&&null!=this.tag?(this._paused=!1,this.tag.play(),!0):!1},b.stop=function(){return this._offset=0,this.pause(),this.playState=createjs.Sound.PLAY_FINISHED,this._cleanUp(),!0},b.setMasterVolume=function(){return this._updateVolume(),!0},b.setVolume=function(a){return this.volume=a,!0},b._updateVolume=function(){if(null!=this.tag){var a=this._muted||createjs.Sound._masterMute?0:this._volume*createjs.Sound._masterVolume;return a!=this.tag.volume&&(this.tag.volume=a),!0}return!1},b.getVolume=function(){return this.volume},b.setMasterMute=function(){return this._updateVolume(),!0},b.setMute=function(a){return null==a||void 0==a?!1:(this._muted=a,this._updateVolume(),!0)},b.getMute=function(){return this._muted},b.setPan=function(){return!1},b.getPan=function(){return 0},b.getPosition=function(){return null==this.tag?this._offset:1e3*this.tag.currentTime},b.setPosition=function(a){if(null==this.tag)this._offset=a;else{this.tag.removeEventListener(createjs.HTMLAudioPlugin._AUDIO_SEEKED,this.loopHandler,!1);try{this.tag.currentTime=.001*a}catch(b){return!1}this.tag.addEventListener(createjs.HTMLAudioPlugin._AUDIO_SEEKED,this.loopHandler,!1)}return!0},b.getDuration=function(){return this._duration},b._handleSoundComplete=function(){this._offset=0,null!=window.createjs&&(this.playState=createjs.Sound.PLAY_FINISHED,this._cleanUp(),this._sendEvent("complete"))},b.handleSoundLoop=function(){this._offset=0,this._remainingLoops--,0==this._remainingLoops&&(this.tag.loop=!1,this.tag.removeEventListener(createjs.HTMLAudioPlugin._AUDIO_SEEKED,this.loopHandler,!1)),this._sendEvent("loop")},b.playFailed=function(){null!=window.createjs&&(this.playState=createjs.Sound.PLAY_FAILED,this._cleanUp(),this._sendEvent("failed"))},b.toString=function(){return"[HTMLAudioPlugin SoundInstance]"},createjs.HTMLAudioPlugin.SoundInstance=a}(),function(){"use strict";function a(a,b){this._init(a,b)}var b=a.prototype;b.src=null,b.tag=null,b.preloadTimer=null,b.loadedHandler=null,b._init=function(a,b){if(this.src=a,this.tag=b,this.preloadTimer=setInterval(createjs.proxy(this.preloadTick,this),200),this.loadedHandler=createjs.proxy(this.sendLoadedEvent,this),this.tag.addEventListener&&this.tag.addEventListener("canplaythrough",this.loadedHandler),null==this.tag.onreadystatechange)this.tag.onreadystatechange=createjs.proxy(this.sendLoadedEvent,this);else{var c=this.tag.onreadystatechange;this.tag.onreadystatechange=function(){c(),this.tag.onreadystatechange=createjs.proxy(this.sendLoadedEvent,this)}
 }this.tag.preload="auto",this.tag.load()},b.preloadTick=function(){var a=this.tag.buffered,b=this.tag.duration;a.length>0&&a.end(0)>=b-1&&this.handleTagLoaded()},b.handleTagLoaded=function(){clearInterval(this.preloadTimer)},b.sendLoadedEvent=function(){this.tag.removeEventListener&&this.tag.removeEventListener("canplaythrough",this.loadedHandler),this.tag.onreadystatechange=null,createjs.Sound._sendFileLoadEvent(this.src)},b.toString=function(){return"[HTMLAudioPlugin Loader]"},createjs.HTMLAudioPlugin.Loader=a}(),function(){"use strict";function a(a){this._init(a)}var b=a;b.tags={},b.get=function(c){var d=b.tags[c];return null==d&&(d=b.tags[c]=new a(c)),d},b.remove=function(a){var c=b.tags[a];return null==c?!1:(c.removeAll(),delete b.tags[a],!0)},b.removeAll=function(){for(var a in b.tags)b.tags[a].removeAll();b.tags={}},b.getInstance=function(a){var c=b.tags[a];return null==c?null:c.get()},b.setInstance=function(a,c){var d=b.tags[a];return null==d?null:d.set(c)},b.checkSrc=function(a){var c=b.tags[a];return null==c?null:(c.checkSrcChange(),void 0)};var c=a.prototype;c.src=null,c.length=0,c.available=0,c.tags=null,c._init=function(a){this.src=a,this.tags=[]},c.add=function(a){this.tags.push(a),this.length++,this.available++},c.removeAll=function(){for(;this.length--;)delete this.tags[this.length];this.src=null,this.tags.length=0},c.get=function(){if(0==this.tags.length)return null;this.available=this.tags.length;var a=this.tags.pop();return null==a.parentNode&&document.body.appendChild(a),a},c.set=function(a){var b=createjs.indexOf(this.tags,a);-1==b&&this.tags.push(a),this.available=this.tags.length},c.checkSrcChange=function(){for(var a=this.tags.length-1,b=this.tags[a].src;a--;)this.tags[a].src=b},c.toString=function(){return"[HTMLAudioPlugin TagPool]"},createjs.HTMLAudioPlugin.TagPool=a}();
-
-(function () {
-
-
-
-var Engine,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-window.pass = void 0;
-
-Engine = (function() {
-  function Engine(resource_manager) {
-    this.resource_manager = resource_manager;
-    this.getTileset = __bind(this.getTileset, this);
-    this.getSprite = __bind(this.getSprite, this);
-    this.getSound = __bind(this.getSound, this);
-    this.getObject = __bind(this.getObject, this);
-    this.getScene = __bind(this.getScene, this);
-    this.createTileset = __bind(this.createTileset, this);
-    this.createSprite = __bind(this.createSprite, this);
-    this.createSound = __bind(this.createSound, this);
-    this.createObject = __bind(this.createObject, this);
-    this.createScene = __bind(this.createScene, this);
-    this.setPreloadScene = __bind(this.setPreloadScene, this);
-    this.setInitialScene = __bind(this.setInitialScene, this);
-    this.skipTimers = __bind(this.skipTimers, this);
-    this.updateTimers = __bind(this.updateTimers, this);
-    this.iteration = __bind(this.iteration, this);
-    this.loop = __bind(this.loop, this);
-    this.start = __bind(this.start, this);
-    this.updateCanvasSize = __bind(this.updateCanvasSize, this);
-    this.getSurface = __bind(this.getSurface, this);
-    this.createSurface = __bind(this.createSurface, this);
-    this.addCanvas = __bind(this.addCanvas, this);
-    this.canvases = {};
-    this.fps = 45;
-    this.last_frameskip_collection = Math.floor(Date.now());
-    this.frameskip = 0;
-    this.current_frameskip = 0;
-    this.current_frame = 0;
-    this.scenes = {};
-    this.objects = {};
-    this.sounds = {};
-    this.sprites = {};
-    this.tilesets = {};
-    this.named_timers = {};
-    this.unnamed_timers = [];
-    this.ease.engine = this;
-  }
-
-  Engine.prototype.addCanvas = function(canvas, label) {
-    if (label == null) {
-      label = "";
-    }
-    return this.canvases[label] = util.unpackElement(canvas);
-  };
-
-  Engine.prototype.createSurface = function(label) {
-    return this.canvases[label] = document.createElement("canvas");
-  };
-
-  Engine.prototype.getSurface = function(label) {
-    var _ref;
-    if (typeof label === "string") {
-      return (_ref = this.canvases[label]) != null ? _ref.getContext("2d") : void 0;
-    } else if (label.tagName === "CANVAS") {
-      return label.getContext("2d");
-    } else {
-      return label;
-    }
-  };
-
-  Engine.prototype.updateCanvasSize = function(canvas, w, h) {
-    canvas.width = w;
-    canvas.height = h;
-    canvas.style.width = "" + w + "px";
-    return canvas.style.height = "" + h + "px";
-  };
-
-  Engine.prototype.start = function() {
-    this.initial_scene.addTargetSurface(this.canvases[""]);
-    return this.loop();
-  };
-
-  Engine.prototype.loop = function() {
-    return this.iteration();
-  };
-
-  Engine.prototype.iteration = function() {
-    var belated_timeout, current_frame, frame_interval, name, next_frame, overtime, scene, skipped_frames, _ref;
-    frame_interval = 1000 / this.fps;
-    current_frame = Date.now();
-    next_frame = current_frame + frame_interval;
-    this.current_frame += 1;
-    if (Math.floor(current_frame) > this.last_frameskip_collection) {
-      this.frameskip = this.current_frameskip;
-      this.current_frameskip = 0;
-      this.last_frameskip_collection = Math.floor(current_frame);
-    }
-    this.updateTimers();
-    _ref = this.scenes;
-    for (name in _ref) {
-      scene = _ref[name];
-      if (scene.active) {
-        scene.iteration();
-      }
-    }
-    if (Date.now() < next_frame) {
-      return setTimeout(this.iteration, next_frame - Date.now());
-    } else {
-      overtime = Date.now() - next_frame;
-      skipped_frames = Math.floor(overtime / frame_interval);
-      this.current_frameskip += skipped_frames;
-      this.current_frame += skipped_frames;
-      this.skipTimers(skipped_frames);
-      belated_timeout = overtime % frame_interval;
-      return setTimeout(this.iteration, belated_timeout);
-    }
-  };
-
-  Engine.prototype.updateTimers = function() {
-    var key, timer, timer_name, val, _i, _len, _ref, _ref1, _results;
-    _ref = this.unnamed_timers.concat((function() {
-      var _ref, _results;
-      _ref = this.named_timers;
-      _results = [];
-      for (key in _ref) {
-        val = _ref[key];
-        _results.push(val);
-      }
-      return _results;
-    }).call(this));
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      timer = _ref[_i];
-      timer.step();
-    }
-    this.unnamed_timers = this.unnamed_timers.filter(function(obj) {
-      return !obj.finished;
-    });
-    _ref1 = this.named_timers;
-    _results = [];
-    for (timer_name in _ref1) {
-      timer = _ref1[timer_name];
-      if (timer.finished) {
-        _results.push(delete this.named_timers[timer_name]);
-      } else {
-        _results.push(void 0);
-      }
-    }
-    return _results;
-  };
-
-  Engine.prototype.skipTimers = function(frames) {
-    var key, timer, val, _i, _len, _ref, _results;
-    _ref = this.unnamed_timers.concat((function() {
-      var _ref, _results1;
-      _ref = this.named_timers;
-      _results1 = [];
-      for (key in _ref) {
-        val = _ref[key];
-        _results1.push(val);
-      }
-      return _results1;
-    }).call(this));
-    _results = [];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      timer = _ref[_i];
-      _results.push(timer.skip(frames));
-    }
-    return _results;
-  };
-
-  Engine.prototype.setInitialScene = function(scene) {
-    return this.initial_scene = scene;
-  };
-
-  Engine.prototype.setPreloadScene = function(scene) {
-    return this.preload_scene = scene;
-  };
-
-  Engine.prototype.createScene = function(name) {
-    var scene;
-    scene = new Scene(this, name);
-    if (this.initial_scene == null) {
-      this.initial_scene = scene;
-    }
-    return this.scenes[name] = scene;
-  };
-
-  Engine.prototype.createObject = function(name) {
-    return this.objects[name] = new Object(this, name);
-  };
-
-  Engine.prototype.createSound = function(name, sound) {
-    return this.sounds[name] = new Sound(this, name, this.resource_manager.getSound(sound));
-  };
-
-  Engine.prototype.createSprite = function(name, image) {
-    console.log("gget", this.resource_manager.getImage(image));
-    return this.sprites[name] = new Sprite(this, name, this.resource_manager.getImage(image));
-  };
-
-  Engine.prototype.createTileset = function(name, image, tile_width, tile_height) {
-    return this.tilesets[name] = new Tileset(this, name, this.resource_manager.getImage(image), tile_width, tile_height);
-  };
-
-  Engine.prototype.getScene = function(name) {
-    if (typeof name === "string") {
-      return this.scenes[name];
-    } else {
-      return name;
-    }
-  };
-
-  Engine.prototype.getObject = function(name) {
-    if (typeof name === "string") {
-      return this.objects[name];
-    } else {
-      return name;
-    }
-  };
-
-  Engine.prototype.getSound = function(name) {
-    if (typeof name === "string") {
-      return this.sounds[name];
-    } else {
-      return name;
-    }
-  };
-
-  Engine.prototype.getSprite = function(name) {
-    if (typeof name === "string") {
-      return this.sprites[name];
-    } else {
-      return name;
-    }
-  };
-
-  Engine.prototype.getTileset = function(name) {
-    if (typeof name === "string") {
-      return this.tilesets[name];
-    } else {
-      return name;
-    }
-  };
-
-  return Engine;
-
-})();
-
-Engine.prototype.draw = {
-  _startPath: (function(_this) {
-    return function(surface, options) {
-      var _ref;
-      surface = _this.getSurface(surface);
-      if ((_ref = !options._is_text) != null ? _ref : false) {
-        surface.beginPath();
-      }
-      return surface;
-    };
-  })(this),
-  _finishPath: (function(_this) {
-    return function(surface, options) {
-      var _ref, _ref1, _ref10, _ref11, _ref12, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
-      if ((_ref = options.stroke) != null ? _ref : true) {
-        surface.lineWidth = (_ref1 = (_ref2 = options.lineWidth) != null ? _ref2 : (_ref3 = options.pen) != null ? _ref3.lineWidth : void 0) != null ? _ref1 : 1;
-        surface.strokeStyle = (_ref4 = (_ref5 = options.lineColor) != null ? _ref5 : (_ref6 = options.pen) != null ? _ref6.lineColor : void 0) != null ? _ref4 : "black";
-        if ((_ref7 = options._is_text) != null ? _ref7 : false) {
-          surface.strokeText(options.text, options.x, options.y);
-        } else {
-          surface.stroke();
-        }
-      }
-      if ((_ref8 = options.fill) != null ? _ref8 : false) {
-        surface.fillStyle = (_ref9 = (_ref10 = options.fillColor) != null ? _ref10 : (_ref11 = options.pen) != null ? _ref11.fillColor : void 0) != null ? _ref9 : "white";
-        if ((_ref12 = options._is_text) != null ? _ref12 : false) {
-          return surface.fillText(options.text, options.x, options.y);
-        } else {
-          return surface.fill();
-        }
-      }
-    };
-  })(this),
-  _getTextWidth: (function(_this) {
-    return function(surface, text, options) {
-      var width;
-      _this._applyTextContext(surface, options);
-      width = surface.measureText(text).width;
-      surface.restore();
-      return width;
-    };
-  })(this),
-  _applyTextContext: (function(_this) {
-    return function(surface, options) {
-      var font_family, font_size, font_style, font_weight, scale, _ref, _ref1, _ref2, _ref3, _ref4, _ref5;
-      font_family = (_ref = options.font) != null ? _ref : "sans-serif";
-      font_size = (_ref1 = options.size) != null ? _ref1 : 16;
-      font_weight = (_ref2 = options.weight) != null ? _ref2 : "normal";
-      font_style = (_ref3 = options.style) != null ? _ref3 : "normal";
-      scale = (_ref4 = options.scale) != null ? _ref4 : 1;
-      surface.save();
-      surface.font = "" + font_weight + " " + font_style + " " + font_size + "px '" + font_family + "'";
-      surface.globalAlpha = (_ref5 = options.alpha) != null ? _ref5 : 1;
-      return surface.scale(scale, scale);
-    };
-  })(this),
-  line: (function(_this) {
-    return function(x1, y1, x2, y2, options, surface) {
-      if (options == null) {
-        options = {};
-      }
-      if (surface == null) {
-        surface = "";
-      }
-      surface = _this._startPath(surface, options);
-      surface.moveTo(x1, y1);
-      surface.lineTo(x2, y2);
-      return _this._finishPath(surface, options);
-    };
-  })(this),
-  rectangle: (function(_this) {
-    return function(x1, y1, x2, y2, options, surface) {
-      if (options == null) {
-        options = {};
-      }
-      if (surface == null) {
-        surface = "";
-      }
-      surface = _this._startPath(surface, options);
-      surface.rect(x1, y1, x2 - x1, y2 - y1);
-      return _this._finishPath(surface, options);
-    };
-  })(this),
-  boxEllipse: (function(_this) {
-    return function(x1, y1, x2, y2, options, surface) {
-      var rx, ry, x, y;
-      if (options == null) {
-        options = {};
-      }
-      if (surface == null) {
-        surface = "";
-      }
-      x = (x1 + x2) / 2;
-      y = (y1 + y2) / 2;
-      rx = (x2 - x1) / 2;
-      ry = (y2 - y1) / 2;
-      return _this.radiusEllipse(x, y, rx, ry, options, surface);
-    };
-  })(this),
-  radiusEllipse: (function(_this) {
-    return function(x, y, rx, ry, options, surface) {
-      var i, step, _i, _ref, _ref1;
-      if (options == null) {
-        options = {};
-      }
-      if (surface == null) {
-        surface = "";
-      }
-      surface = _this._startPath(surface, options);
-      step = (_ref = options.step) != null ? _ref : 0.1;
-      if (rx === ry) {
-        surface.arc(x, y, rx, 0, 2 * Math.PI, false);
-      } else {
-        surface.moveTo(x + rx, y);
-        for (i = _i = 0, _ref1 = Math.PI * 2 + step; 0 <= _ref1 ? _i <= _ref1 : _i >= _ref1; i = 0 <= _ref1 ? ++_i : --_i) {
-          surface.lineTo(x + (Math.cos(i) * rx), y + (Math.sin(i) * ry));
-        }
-      }
-      return _this._finishPath(surface, options);
-    };
-  })(this),
-  boxPolygon: (function(_this) {
-    return function(x1, y1, x2, y2, sides, options, surface) {
-      if (options == null) {
-        options = {};
-      }
-      if (surface == null) {
-        surface = "";
-      }
-      return pass;
-    };
-  })(this),
-  radiusPolygon: (function(_this) {
-    return function(x, y, r, sides, options, surface) {
-      if (options == null) {
-        options = {};
-      }
-      if (surface == null) {
-        surface = "";
-      }
-      return pass;
-    };
-  })(this),
-  text: (function(_this) {
-    return function(x, y, text, options, surface) {
-      var text_width;
-      if (options == null) {
-        options = {};
-      }
-      if (surface == null) {
-        surface = "";
-      }
-      if (options.alignment == null) {
-        options.alignment = "left";
-      }
-      if (options.scale == null) {
-        options.scale = 1;
-      }
-      options._is_text = true;
-      options.text = text;
-      options.y = y;
-      if (options.fill == null) {
-        options.fill = true;
-      }
-      if (options.fillColor == null) {
-        options.fillColor = "black";
-      }
-      if (options.stroke == null) {
-        options.stroke = false;
-      }
-      if (alignment === "left") {
-        options.x = x;
-      } else {
-        text_width = _this._getTextWidth(text, options);
-        if (alignment === "center") {
-          options.x = x - ((text_width / 2) * scale * scale);
-        } else if (alignment === "right") {
-          options.x = x - text_width;
-        }
-      }
-      _this._startPath(surface, options);
-      _this._finishPath(surface, options);
-      return surface.restore();
-    };
-  })(this)
-};
-
-var Ease,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; },
-  __slice = [].slice;
-
-Engine.prototype.ease = {
-  _calculateElasticValues: function(duration, amplitude, period, change, inout) {
-    var overshoot;
-    if (inout == null) {
-      inout = false;
-    }
-    if (period == null) {
-      if (inout) {
-        period = duration * (0.3 * 1.5);
-      } else {
-        period = duration * 0.3;
-      }
-    }
-    if ((amplitude == null) || amplitude < Math.abs(change)) {
-      amplitude = change;
-      overshoot = period / 4;
-    } else {
-      overshoot = period / (2 * Math.PI) * Math.asin(change / amplitude);
-    }
-    return [amplitude, period, change, overshoot];
-  },
-  backIn: function(start, end, duration, next, infinite, invert_repeat, overshoot) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    if (overshoot == null) {
-      overshoot = 1.70158;
-    }
-    return new Ease(this.engine, "backIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, overshoot);
-  },
-  backOut: function(start, end, duration, next, infinite, invert_repeat, overshoot) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    if (overshoot == null) {
-      overshoot = 1.70158;
-    }
-    return new Ease(this.engine, "backOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, overshoot);
-  },
-  backInOut: function(start, end, duration, next, infinite, invert_repeat, overshoot) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    if (overshoot == null) {
-      overshoot = 1.70158;
-    }
-    return new Ease(this.engine, "backInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, overshoot);
-  },
-  bounceOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "bounceOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  bounceIn: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "bounceIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  bounceInOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "bounceInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  circOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "circOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  circIn: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "circIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  circInOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "circInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  cubicOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "cubicOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  cubicIn: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "cubicIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  cubicInOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "cubicInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  elasticOut: function(start, end, duration, next, infinite, invert_repeat, amplitude, period) {
-    var change, overshoot, _ref;
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    if (amplitude == null) {
-      amplitude = null;
-    }
-    if (period == null) {
-      period = null;
-    }
-    _ref = this._calculateElasticValues(duration, amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
-    end = start + change;
-    return new Ease(this.engine, "elasticOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot);
-  },
-  elasticIn: function(start, end, duration, next, infinite, invert_repeat, amplitude, period) {
-    var change, overshoot, _ref;
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    if (amplitude == null) {
-      amplitude = null;
-    }
-    if (period == null) {
-      period = null;
-    }
-    _ref = this._calculateElasticValues(duration, amplitude, period, end - start), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
-    end = start + change;
-    return new Ease(this.engine, "elasticIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot);
-  },
-  elasticInOut: function(start, end, duration, next, infinite, invert_repeat, amplitude, period) {
-    var change, overshoot, _ref;
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    if (amplitude == null) {
-      amplitude = null;
-    }
-    if (period == null) {
-      period = null;
-    }
-    _ref = this._calculateElasticValues(duration, amplitude, period, end - start, true), amplitude = _ref[0], period = _ref[1], change = _ref[2], overshoot = _ref[3];
-    end = start + change;
-    return new Ease(this.engine, "elasticInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next, amplitude, period, overshoot);
-  },
-  expoOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "expoOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  expoIn: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "expoIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  expoInOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "expoInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  linearNone: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  linearOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  linearIn: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  linearInOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "linearNone", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  quadOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "quadOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  quadIn: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "quadIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  quadInOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "quadInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  quartOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "quartOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  quartIn: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "quartIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  quartInOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "quartInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  sineOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "sineOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  sineIn: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "sineIn", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  },
-  sineInOut: function(start, end, duration, next, infinite, invert_repeat) {
-    if (next == null) {
-      next = null;
-    }
-    if (infinite == null) {
-      infinite = false;
-    }
-    if (invert_repeat == null) {
-      invert_repeat = false;
-    }
-    return new Ease(this.engine, "sineInOut", infinite, start, end, this.engine.current_frame, duration, invert_repeat, next);
-  }
-};
-
-Ease = (function() {
-  function Ease() {
-    var duration, end, engine, infinite, invert_repeat, next, params, start, start_frame, type;
-    engine = arguments[0], type = arguments[1], infinite = arguments[2], start = arguments[3], end = arguments[4], start_frame = arguments[5], duration = arguments[6], invert_repeat = arguments[7], next = arguments[8], params = 10 <= arguments.length ? __slice.call(arguments, 9) : [];
-    this.engine = engine;
-    this.type = type;
-    this.infinite = infinite;
-    this.start = start;
-    this.end = end;
-    this.start_frame = start_frame;
-    this.duration = duration;
-    this.invert_repeat = invert_repeat;
-    this.next = next;
-    this.params = params;
-    this.quadInOut = __bind(this.quadInOut, this);
-    this.quadOut = __bind(this.quadOut, this);
-    this.quadIn = __bind(this.quadIn, this);
-    this.linearNone = __bind(this.linearNone, this);
-    this.expoInOut = __bind(this.expoInOut, this);
-    this.expoOut = __bind(this.expoOut, this);
-    this.expoIn = __bind(this.expoIn, this);
-    this.elasticInOut = __bind(this.elasticInOut, this);
-    this.elasticIn = __bind(this.elasticIn, this);
-    this.elasticOut = __bind(this.elasticOut, this);
-    this.cubicInOut = __bind(this.cubicInOut, this);
-    this.cubicOut = __bind(this.cubicOut, this);
-    this.cubicIn = __bind(this.cubicIn, this);
-    this.circInOut = __bind(this.circInOut, this);
-    this.circOut = __bind(this.circOut, this);
-    this.circIn = __bind(this.circIn, this);
-    this.bounceInOut = __bind(this.bounceInOut, this);
-    this.bounceIn = __bind(this.bounceIn, this);
-    this.bounceOut = __bind(this.bounceOut, this);
-    this.backInOut = __bind(this.backInOut, this);
-    this.backOut = __bind(this.backOut, this);
-    this.backIn = __bind(this.backIn, this);
-    this.valueOf = __bind(this.valueOf, this);
-    this.updateValue = __bind(this.updateValue, this);
-    this.abort = __bind(this.abort, this);
-    this.goToNext = __bind(this.goToNext, this);
-    this.func = this[this.type];
-    this.change = this.end - this.start;
-    this.value = this.start;
-    this.last_updated = this.start_frame;
-    this.finished = false;
-  }
-
-  Ease.prototype.goToNext = function() {
-    this.func = this[this.next.type];
-    this.change = this.next.change;
-    this.value = this.next.value;
-    this.start_frame = this.last_updated = this.engine.current_frame;
-    this.infinite = this.next.infinite;
-    this.end = this.next.end;
-    this.start = this.next.start;
-    this.change = this.next.change;
-    this.invert_repeat = this.next.invert_repeat;
-    this.params = this.next.params;
-    this.duration = this.next.duration;
-    this.finished = false;
-    return this.next = this.next.next;
-  };
-
-  Ease.prototype.abort = function() {
-    return this.finished = true;
-  };
-
-  Ease.prototype.updateValue = function(current_frame) {
-    this.change = this.end - this.start;
-    if (current_frame >= this.start_frame + this.duration) {
-      if (this.infinite) {
-        this.start_frame = current_frame;
-        if (this.invert_repeat) {
-          this.start = this.start + this.change;
-          this.change = -this.change;
-        }
-        return this.value = this.start;
-      } else if (this.next != null) {
-        return this.goToNext();
-      } else {
-        this.finished = true;
-        return this.value = this.start + this.change;
-      }
-    } else {
-      return this.value = this.func(current_frame - this.start_frame);
-    }
-  };
-
-  Ease.prototype.valueOf = function() {
-    if (!this.finished && this.engine.current_frame > this.last_updated) {
-      this.updateValue(this.engine.current_frame);
-      this.last_updated = this.engine.current_frame;
-    }
-    return this.value;
-  };
-
-  Ease.prototype.backIn = function(time) {
-    var overshoot;
-    time = time / this.duration;
-    overshoot = this.params[0];
-    return this.change * time * time * ((overshoot + 1) * time - overshoot) + this.start;
-  };
-
-  Ease.prototype.backOut = function(time) {
-    var overshoot;
-    time = time / this.duration - 1;
-    overshoot = this.params[0];
-    return this.change * (time * time * ((overshoot + 1) * time + overshoot) + 1) + this.start;
-  };
-
-  Ease.prototype.backInOut = function(time) {
-    var overshoot;
-    time = time / (this.duration / 2);
-    overshoot = this.params[0] * 1.525;
-    if (time < 1) {
-      return this.change / 2 * (time * time * ((overshoot + 1) * time - overshoot)) + this.start;
-    } else {
-      time -= 2;
-      return this.change / 2 * (time * time * ((overshoot + 1) * time + overshoot) + 2) + this.start;
-    }
-  };
-
-  Ease.prototype.bounceOut = function(time, start) {
-    if (start == null) {
-      start = null;
-    }
-    time = time / this.duration;
-    start = start != null ? start : this.start;
-    if (time < 1 / 2.75) {
-      return this.change * (7.5625 * time * time) + start;
-    } else if (time < 2 / 2.75) {
-      time = time - (1.5 / 2.75);
-      return this.change * (7.5625 * time * time + 0.75) + start;
-    } else if (time < 2.5 / 2.75) {
-      time = time - (2.25 / 2.75);
-      return this.change * (7.5625 * time * time + 0.9375) + start;
-    } else {
-      time = time - (2.625 / 2.75);
-      return this.change * (7.5625 * time * time + 0.984375) + start;
-    }
-  };
-
-  Ease.prototype.bounceIn = function(time, start) {
-    if (start == null) {
-      start = null;
-    }
-    start = start != null ? start : this.start;
-    return this.change - this.bounceOut(this.duration - time, 0) + start;
-  };
-
-  Ease.prototype.bounceInOut = function(time) {
-    if (time < this.duration / 2) {
-      return this.bounceIn(time * 2, 0) + this.start;
-    } else {
-      return this.bounceOut(time * 2 - this.duration, 0) + this.start;
-    }
-  };
-
-  Ease.prototype.circIn = function(time) {
-    time = time / this.duration;
-    return -this.change * (Math.sqrt(1 - time * time) - 1) + this.start;
-  };
-
-  Ease.prototype.circOut = function(time) {
-    time = time / this.duration - 1;
-    return this.change * Math.sqrt(1 - time * time) + this.start;
-  };
-
-  Ease.prototype.circInOut = function(time) {
-    time = time / (this.duration / 2);
-    if (time < 1) {
-      return -this.change / 2 * (Math.sqrt(1 - time * time) - 1) + this.start;
-    } else {
-      time = time - 2;
-      return this.change / 2 * (Math.sqrt(1 - time * time) + 1) + this.start;
-    }
-  };
-
-  Ease.prototype.cubicIn = function(time) {
-    time = time / this.duration;
-    return this.change * time * time * time + this.start;
-  };
-
-  Ease.prototype.cubicOut = function(time) {
-    time = time / this.duration - 1;
-    return this.change * (time * time * time + 1) + this.start;
-  };
-
-  Ease.prototype.cubicInOut = function(time) {
-    time = time / (this.duration / 2);
-    if (time < 1) {
-      return change / 2 * time * time * time + this.start;
-    } else {
-      time = time - 2;
-      return change / 2 * (time * time * time + 2) + begin;
-    }
-  };
-
-  Ease.prototype.elasticOut = function(time) {
-    var amplitude, overshoot, period;
-    time = time / this.duration;
-    amplitude = this.params[0];
-    period = this.params[1];
-    overshoot = this.params[2];
-    return (amplitude * Math.pow(2, -10 * time)) * Math.sin((time * this.duration - overshoot) * (2 * Math.PI) / period) + this.change + this.start;
-  };
-
-  Ease.prototype.elasticIn = function(time) {
-    var amplitude, overshoot, period;
-    time = time / this.duration;
-    amplitude = this.params[0];
-    period = this.params[1];
-    overshoot = this.params[2];
-    return -(amplitude * Math.pow(2, -10 * time)) * Math.sin((time * this.duration - overshoot) * (2 * Math.PI) / period) + this.start;
-  };
-
-  Ease.prototype.elasticInOut = function(time) {
-    var amplitude, overshoot, period;
-    time = time / (this.duration / 2) - 1;
-    amplitude = this.params[0];
-    period = this.params[1];
-    overshoot = this.params[2];
-    if (time < 1) {
-      return -0.5 * (amplitude * Math.pow(2, -10 * time)) * Math.sin((time * this.duration - overshoot) * ((2 * Math.PI) / period)) + this.start;
-    } else {
-      return amplitude * Math.pow(2, -10 * time) * Math.sin((time * this.duration - overshoot) * (2 * Math.PI) / period) + this.change + this.start;
-    }
-  };
-
-  Ease.prototype.expoIn = function(time) {
-    return this.change * Math.pow(2, 10 * (time / this.duration - 1)) + this.start;
-  };
-
-  Ease.prototype.expoOut = function(time) {
-    return this.change * (-Math.pow(2, -10 * time / this.duration) + 1) + this.start;
-  };
-
-  Ease.prototype.expoInOut = function(time) {
-    time = time / (this.duration / 2);
-    if (time < 1) {
-      return this.change / 2 * Math.pow(2, 10 * (time - 1)) + this.start;
-    } else {
-      return this.change / 2 * (-Math.pow(2, -10 * (time - 1)) + 2) + this.start;
-    }
-  };
-
-  Ease.prototype.linearNone = function(time) {
-    return this.change * time / this.duration + this.start;
-  };
-
-  Ease.prototype.quadIn = function(time) {
-    time = time / this.duration;
-    return this.change * time * time + this.start;
-  };
-
-  Ease.prototype.quadOut = function(time) {
-    time = time / this.duration;
-    return -this.change * time * (time - 2) + this.start;
-  };
-
-  Ease.prototype.quadInOut = function(time) {
-    time = time / (this.duration / 2);
-    if (time < 1) {
-      return this.change / 2 * time * time + this.start;
-    } else {
-      time = time - 1;
-      return -this.change / 2 * (time * (time - 2) - 1) + this.start;
-    }
-  };
-
-  return Ease;
-
-})();
-
-var __slice = [].slice;
-
-Engine.prototype.random = {
-  number: (function(_this) {
-    return function(min, max, precision) {
-      var base_number, rounding_factor, space;
-      base_number = Math.random();
-      space = Math.abs(max - min);
-      rounding_factor = 1 / (precision != null ? precision : 0.00000001);
-      return Math.floor((min + (base_number * space)) * rounding_factor) / rounding_factor;
-    };
-  })(this),
-  pick: (function(_this) {
-    return function() {
-      var options;
-      options = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-      return options[Math.floor(Math.random() * options.length)];
-    };
-  })(this),
-  string: (function(_this) {
-    return function(length, alphabet) {
-      var i;
-      if (alphabet == null) {
-        alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      }
-      return ((function() {
-        var _i, _ref, _results;
-        _results = [];
-        for (i = _i = 0, _ref = length - 1; 0 <= _ref ? _i <= _ref : _i >= _ref; i = 0 <= _ref ? ++_i : --_i) {
-          _results.push(alphabet[Math.floor(Math.random() * alphabet.length)]);
-        }
-        return _results;
-      })()).join("");
-    };
-  })(this)
-};
-
-var Timer,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-Engine.prototype.timing = {
-  startTimer: (function(_this) {
-    return function(frames, callback, name, repeat) {
-      var timer;
-      if (name == null) {
-        name = null;
-      }
-      if (repeat == null) {
-        repeat = false;
-      }
-      timer = new Timer(frames, callback, repeat);
-      if (name != null) {
-        return _this.named_timers[name] = timer;
-      } else {
-        return _this.unnamed_timers.push(timer);
-      }
-    };
-  })(this),
-  stopTimer: (function(_this) {
-    return function(name) {
-      return _this.timers[name].stop();
-    };
-  })(this)
-};
-
-Timer = (function() {
-  function Timer(frames, callback, repeat) {
-    this.frames = frames;
-    this.callback = callback;
-    this.repeat = repeat;
-    this.stop = __bind(this.stop, this);
-    this.skip = __bind(this.skip, this);
-    this.step = __bind(this.step, this);
-    this.current_frame = 0;
-    this.finished = false;
-  }
-
-  Timer.prototype.step = function() {
-    if (this.current_frame >= this.frames) {
-      this.callback();
-      if (repeat) {
-        return this.current_frame = 0;
-      } else {
-        return this.finished = true;
-      }
-    }
-  };
-
-  Timer.prototype.skip = function(frames) {
-    return this.current_frame += frames;
-  };
-
-  Timer.prototype.stop = function() {
-    return this.finished = true;
-  };
-
-  return Timer;
-
-})();
-
-var Object;
-
-Object = (function() {
-  function Object(engine, name) {
-    this.engine = engine;
-    this.name = name;
-    this.sprite = null;
-    this.instances = [];
-    this.x = 0;
-    this.y = 0;
-  }
-
-  Object.prototype.callEvent = function(name, data) {
-    var event_map, _ref, _ref1;
-    if (data == null) {
-      data = {};
-    }
-    event_map = {
-      mouseover: this.onMouseOver,
-      mouseout: this.onMouseOut,
-      create: this.onCreate,
-      step: this.onStep,
-      click: this.onClick,
-      click_global: this.onClickGlobal
-    };
-    switch (name) {
-      case "draw":
-        this.drawSelf((_ref = data.surface) != null ? _ref : "");
-        return typeof this.onDraw === "function" ? this.onDraw(data) : void 0;
-      default:
-        return (_ref1 = event_map[name]) != null ? _ref1.bind(this)(data) : void 0;
-    }
-  };
-
-  Object.prototype.drawSelf = function(surface) {
-    return this.drawSprite(surface);
-  };
-
-  Object.prototype.drawSprite = function(surface) {
-    var _ref;
-    if (surface == null) {
-      surface = "";
-    }
-    if ((this.sprite != null) && ((_ref = this.draw_sprite) != null ? _ref : "true")) {
-      return this.sprite.draw(this.x, this.y, {}, surface);
-    }
-  };
-
-  Object.prototype.getBoundingBox = function() {
-    var image_size, _ref;
-    image_size = (_ref = this.sprite) != null ? _ref.getSize() : void 0;
-    return {
-      x1: this.x,
-      x2: this.x + (image_size != null ? image_size.width : void 0),
-      y1: this.y,
-      y2: this.y + (image_size != null ? image_size.height : void 0)
-    };
-  };
-
-  Object.prototype.getInstances = function() {
-    return this.instances;
-  };
-
-  Object.prototype.checkPointCollision = function(x, y) {
-    var bounding_box;
-    bounding_box = this.getBoundingBox();
-    return x >= (bounding_box != null ? bounding_box.x1 : void 0) && x <= (bounding_box != null ? bounding_box.x2 : void 0) && y >= (bounding_box != null ? bounding_box.y1 : void 0) && y <= (bounding_box != null ? bounding_box.y2 : void 0);
-  };
-
-  return Object;
-
-})();
-
-var ResourceManager,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-ResourceManager = (function() {
-  function ResourceManager(base_path) {
-    this.base_path = base_path != null ? base_path : "";
-    this.preload = __bind(this.preload, this);
-    this.prepare = __bind(this.prepare, this);
-    this.getImage = __bind(this.getImage, this);
-    this.addSounds = __bind(this.addSounds, this);
-    this.addScripts = __bind(this.addScripts, this);
-    this.addImages = __bind(this.addImages, this);
-    this.addScript = __bind(this.addScript, this);
-    this.addSound = __bind(this.addSound, this);
-    this.addImage = __bind(this.addImage, this);
-    this.joinPath = __bind(this.joinPath, this);
-    this.resources = {
-      stage1_images: [],
-      stage1_audio: [],
-      stage1_scripts: [],
-      images: [],
-      audio: [],
-      scripts: []
-    };
-    this.resource_objects = {
-      images: {},
-      audio: {},
-      scripts: {}
-    };
-  }
-
-  ResourceManager.prototype.joinPath = function(path) {
-    if (this.base_path === "") {
-      return path;
-    } else {
-      return util.stripRight(this.base_path, "/") + "/" + path;
-    }
-  };
-
-  ResourceManager.prototype.addImage = function(path, first_stage) {
-    if (first_stage == null) {
-      first_stage = false;
-    }
-    if (first_stage) {
-      return this.resources.stage1_images.push(this.joinPath(path));
-    } else {
-      return this.resources.images.push(this.joinPath(path));
-    }
-  };
-
-  ResourceManager.prototype.addSound = function(path, first_stage) {
-    if (first_stage == null) {
-      first_stage = false;
-    }
-    if (first_stage) {
-      return this.resources.stage1_audio.push(this.joinPath(path));
-    } else {
-      return this.resources.audio.push(this.joinPath(path));
-    }
-  };
-
-  ResourceManager.prototype.addScript = function(path, first_stage) {
-    if (first_stage == null) {
-      first_stage = false;
-    }
-    if (first_stage) {
-      return this.resources.stage1_scripts.push(this.joinPath(path));
-    } else {
-      return this.resources.scripts.push(this.joinPath(path));
-    }
-  };
-
-  ResourceManager.prototype.addImages = function(paths, first_stage) {
-    var path, _i, _len, _results;
-    if (first_stage == null) {
-      first_stage = false;
-    }
-    _results = [];
-    for (_i = 0, _len = paths.length; _i < _len; _i++) {
-      path = paths[_i];
-      _results.push(this.addImage(path, first_stage));
-    }
-    return _results;
-  };
-
-  ResourceManager.prototype.addScripts = function(paths, first_stage) {
-    var path, _i, _len, _results;
-    if (first_stage == null) {
-      first_stage = false;
-    }
-    _results = [];
-    for (_i = 0, _len = paths.length; _i < _len; _i++) {
-      path = paths[_i];
-      _results.push(this.addScript(path, first_stage));
-    }
-    return _results;
-  };
-
-  ResourceManager.prototype.addSounds = function(paths, first_stage) {
-    var path, _i, _len, _results;
-    if (first_stage == null) {
-      first_stage = false;
-    }
-    _results = [];
-    for (_i = 0, _len = paths.length; _i < _len; _i++) {
-      path = paths[_i];
-      _results.push(this.addSound(path, first_stage));
-    }
-    return _results;
-  };
-
-  ResourceManager.prototype.getImage = function(path) {
-    console.log("objs", this.resource_objects);
-    console.log("path", path);
-    return this.resource_objects.images[this.joinPath(path)];
-  };
-
-  ResourceManager.prototype.prepare = function(finished_callback) {
-    if (finished_callback == null) {
-      finished_callback = (function() {});
-    }
-    return pass;
-  };
-
-  ResourceManager.prototype.preload = function(progress_callback, finished_callback) {
-    var image, obj, _i, _len, _ref;
-    if (progress_callback == null) {
-      progress_callback = (function() {});
-    }
-    if (finished_callback == null) {
-      finished_callback = (function() {});
-    }
-    _ref = this.resources.images;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      image = _ref[_i];
-      obj = document.createElement("img");
-      obj.src = image;
-      this.resource_objects.images[image] = obj;
-    }
-    return finished_callback();
-  };
-
-  return ResourceManager;
-
-})();
-
-var Scene,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-Scene = (function() {
-  function Scene(engine, name) {
-    this.engine = engine;
-    this.name = name;
-    this.changeScene = __bind(this.changeScene, this);
-    this.createInstance = __bind(this.createInstance, this);
-    this.checkMouseCollisions = __bind(this.checkMouseCollisions, this);
-    this.redraw = __bind(this.redraw, this);
-    this.iteration = __bind(this.iteration, this);
-    this.checkActive = __bind(this.checkActive, this);
-    this.removeTargetSurface = __bind(this.removeTargetSurface, this);
-    this.handleClick = __bind(this.handleClick, this);
-    this.addTargetSurface = __bind(this.addTargetSurface, this);
-    this.instances = {};
-    this.surfaces = [];
-    this.dirty = true;
-    this.last_instance_id = 100;
-    this.active = false;
-    this.width = 800;
-    this.height = 600;
-    this.last_width = 800;
-    this.last_height = 600;
-  }
-
-  Scene.prototype.addTargetSurface = function(surface) {
-    this.surfaces.push(surface);
-    this.engine.updateCanvasSize(surface, this.width, this.height);
-    $(surface).on("mousemove.radium", (function(_this) {
-      return function(event) {
-        var canvas_pos;
-        canvas_pos = surface.getBoundingClientRect();
-        _this.mouse_x = (event.clientX - canvas_pos.left) | 0;
-        _this.mouse_y = (event.clientY - canvas_pos.top) | 0;
-        return _this.checkMouseCollisions();
-      };
-    })(this));
-    $(surface).on("click.radium", (function(_this) {
-      return function(event) {
-        return _this.handleClick("click", event);
-      };
-    })(this));
-    $(surface).on("mouseup.radium", (function(_this) {
-      return function(event) {
-        return _this.handleClick("mouse_up", event);
-      };
-    })(this));
-    $(surface).on("mousedown.radium", (function(_this) {
-      return function(event) {
-        return _this.handleClick("mouse_down", event);
-      };
-    })(this));
-    return this.checkActive();
-  };
-
-  Scene.prototype.handleClick = function(event_name, event) {
-    var id, instance, _ref;
-    _ref = this.instances;
-    for (id in _ref) {
-      instance = _ref[id];
-      instance.callEvent("" + event_name + "_global", {
-        x: this.mouse_x,
-        y: this.mouse_y,
-        button: event.which
-      });
-      if (instance.checkPointCollision(this.mouse_x, this.mouse_y)) {
-        instance.callEvent(event_name, {
-          x: this.mouse_x,
-          y: this.mouse_y,
-          button: event.which
-        });
-      }
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    return false;
-  };
-
-  Scene.prototype.removeTargetSurface = function(surface) {
-    this.surfaces = this.surfaces.filter(function(obj) {
-      return obj !== surface;
-    });
-    $(surface).off("mousemove.radium");
-    return this.checkActive();
-  };
-
-  Scene.prototype.checkActive = function() {
-    return this.active = this.surfaces.length > 0;
-  };
-
-  Scene.prototype.iteration = function() {
-    var id, instance, surface, _i, _len, _ref, _ref1, _ref2;
-    if (this.width !== this.last_width || this.height !== this.last_height) {
-      _ref = this.surfaces;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        surface = _ref[_i];
-        this.engine.updateCanvasSize(surface, this.width, this.height);
-      }
-      _ref1 = [this.width, this.height], this.last_width = _ref1[0], this.last_height = _ref1[1];
-    }
-    _ref2 = this.instances;
-    for (id in _ref2) {
-      instance = _ref2[id];
-      if (instance.callEvent("step")) {
-        this.dirty = true;
-      }
-    }
-    if (this.dirty) {
-      this.redraw();
-      return this.dirty = false;
-    }
-  };
-
-  Scene.prototype.redraw = function() {
-    var ctx, id, instance, surface, _i, _len, _ref, _results;
-    _ref = this.surfaces;
-    _results = [];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      surface = _ref[_i];
-      ctx = this.engine.getSurface(surface);
-      ctx.clearRect(0, 0, surface.width, surface.height);
-      _results.push((function() {
-        var _ref1, _results1;
-        _ref1 = this.instances;
-        _results1 = [];
-        for (id in _ref1) {
-          instance = _ref1[id];
-          _results1.push(instance.callEvent("draw", {
-            surface: surface
-          }));
-        }
-        return _results1;
-      }).call(this));
-    }
-    return _results;
-  };
-
-  Scene.prototype.checkMouseCollisions = function() {
-    var collision, id, instance, _ref, _results;
-    _ref = this.instances;
-    _results = [];
-    for (id in _ref) {
-      instance = _ref[id];
-      collision = instance.checkPointCollision(this.mouse_x, this.mouse_y);
-      if (collision && !instance._moused_over) {
-        instance.callEvent("mouseover");
-        _results.push(instance._moused_over = true);
-      } else if (!collision && instance._moused_over) {
-        instance.callEvent("mouseout");
-        _results.push(instance._moused_over = false);
-      } else {
-        _results.push(void 0);
-      }
-    }
-    return _results;
-  };
-
-  Scene.prototype.createInstance = function(object, x, y) {
-    var id, instance, real_object;
-    if (x == null) {
-      x = 0;
-    }
-    if (y == null) {
-      y = 0;
-    }
-    id = this.last_instance_id += 1;
-    real_object = this.engine.getObject(object);
-    instance = window.Object.create(real_object);
-    instance.x = x;
-    instance.y = y;
-    instance.id = id;
-    instance.scene = this;
-    this.instances[id] = instance;
-    real_object.instances.push(instance);
-    instance.callEvent("create");
-    return instance;
-  };
-
-  Scene.prototype.changeScene = function(scene) {
-    return pass;
-  };
-
-  return Scene;
-
-})();
-
-var Sound;
-
-Sound = (function() {
-  function Sound() {}
-
-  return Sound;
-
-})();
-
-var Sprite,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-Sprite = (function() {
-  function Sprite(engine, name, image) {
-    var _ref;
-    this.engine = engine;
-    this.name = name;
-    this.image = image;
-    this.getSize = __bind(this.getSize, this);
-    this.draw = __bind(this.draw, this);
-    _ref = this.getSize(), this.width = _ref.width, this.height = _ref.height;
-  }
-
-  Sprite.prototype.draw = function(x, y, options, surface) {
-    var _ref;
-    if (options == null) {
-      options = {};
-    }
-    if (surface == null) {
-      surface = "";
-    }
-    surface = this.engine.getSurface(surface);
-    surface.globalAlpha = (_ref = options.alpha) != null ? _ref : 1;
-    return surface.drawImage(this.image, x, y);
-  };
-
-  Sprite.prototype.getSize = function() {
-    return {
-      width: this.image.width,
-      height: this.image.height
-    };
-  };
-
-  return Sprite;
-
-})();
-
-var Tileset, TilesetTile,
-  __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-Tileset = (function() {
-  function Tileset(engine, name, image, tile_width, tile_height) {
-    this.engine = engine;
-    this.name = name;
-    this.image = image;
-    this.tile_width = tile_width;
-    this.tile_height = tile_height;
-    this.tile = __bind(this.tile, this);
-    this.tiles = {};
-  }
-
-  Tileset.prototype.tile = function(x, y, precise, w, h) {
-    var key, _ref;
-    if (precise == null) {
-      precise = false;
-    }
-    if (w == null) {
-      w = 0;
-    }
-    if (h == null) {
-      h = 0;
-    }
-    key = ("" + x + "/" + y + "/" + w + "/" + h + "/") + (precise ? 1 : 0);
-    return (_ref = this.tiles[key]) != null ? _ref : tiles[key] = new TilesetTile(this.engine, this, x, y, precise, w, h);
-  };
-
-  return Tileset;
-
-})();
-
-TilesetTile = (function() {
-  function TilesetTile(engine, tileset, x, y, precise, w, h) {
-    this.engine = engine;
-    this.tileset = tileset;
-    this.x = x;
-    this.y = y;
-    this.precise = precise != null ? precise : false;
-    this.w = w != null ? w : 0;
-    this.h = h != null ? h : 0;
-    this.getSize = __bind(this.getSize, this);
-    this.draw = __bind(this.draw, this);
-    pass;
-  }
-
-  TilesetTile.prototype.draw = function(x, y) {
-    var source_h, source_w, source_x, source_y, surface;
-    if (this.precise) {
-      source_x = this.x;
-      source_y = this.y;
-      source_w = this.w;
-      source_h = this.h;
-    } else {
-      source_x = this.x * this.tileset.tile_width;
-      source_y = this.y * this.tileset.tile_height;
-      source_w = this.tileset.tile_width;
-      source_h = this.tileset.tile_height;
-    }
-    surface = this.engine.getSurface();
-    return surface.drawImage(source_x, source_y, source_width, source_height, x, y);
-  };
-
-  TilesetTile.prototype.getSize = function() {
-    if (this.precise) {
-      return {
-        width: this.w,
-        height: this.h
-      };
-    } else {
-      return {
-        width: this.tileset.tile_width,
-        height: this.tileset.tile_height
-      };
-    }
-  };
-
-  return TilesetTile;
-
-})();
-
-var util;
-
-util = {
-  stripRight: function(string, character) {
-    return string.replace(new RegExp(character + "*$", "g"), "");
-  },
-  unpackElement: function(element) {
-    console.log(element);
-    if (element instanceof jQuery) {
-      return element[0];
-    } else {
-      return element;
-    }
-  }
-};
-
-window.ResourceManager = ResourceManager;
-
-window.Engine = Engine;
-})();
