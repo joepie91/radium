@@ -113,6 +113,9 @@ class Ease
 		@finished = false
 		@next = @next.next
 		
+	abort: =>
+		@finished = true
+
 	updateValue: (current_frame) =>
 		# We recalculate here, to deal with 'stacked' easings. If we don't do this, letting multiple
 		# easings operate on each other will result in the final value being different from 'end',
