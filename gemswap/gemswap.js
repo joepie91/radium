@@ -12,18 +12,51 @@
    */
   manager.addImages(["images/cursor.png", "images/diamond.png", "images/diamond_inverted.png", "images/diamond_shimmer.png", "images/yellow.png", "images/yellow_inverted.png", "images/yellow_shimmer.png", "images/blue.png", "images/blue_inverted.png", "images/blue_shimmer.png"]);
 
-  /*
-  	manager.addSounds([
-  		"sfx/match.wav"
-  		"sfx/swap.wav"
+  /*manager.addSounds([
+  		"music/music.wav"
   	])
    */
+  engine.addCanvas($("#gamecanvas"));
+  engine.setPreloadScene(engine.createScene("loader"));
+  engine.setInitialScene(engine.createScene("main"));
   return manager.prepare(function() {
-    engine.addCanvas($("#gamecanvas"));
-    engine.setPreloadScene(engine.createScene("loader"));
-    engine.setInitialScene(engine.createScene("main"));
+    var loader;
+    engine.start();
+    engine.getScene("loader").onLoad = function() {
+      return this.createInstance("loader", 0, 0);
+    };
+    engine.getScene("main").onLoad = function() {
+      var x, y, _i, _results;
+      this.createInstance("cursor", 0, 0);
+      _results = [];
+      for (x = _i = 10; _i <= 728; x = _i += 80) {
+        _results.push((function() {
+          var _j, _results1;
+          _results1 = [];
+          for (y = _j = 10; _j <= 550; y = _j += 80) {
+            _results1.push(this.createInstance("diamond", x, y));
+          }
+          return _results1;
+        }).call(this));
+      }
+      return _results;
+    };
+    loader = engine.createObject("loader");
+    loader.onStep = function() {
+      return true;
+    };
+    loader.onDraw = function() {
+      engine.draw.rectangle(0, 0, 800 * manager.file_progress, 64, {
+        fillColor: "#CCCCCC",
+        fill: true
+      });
+      return engine.draw.rectangle(0, 64, 800 * manager.total_progress, 128, {
+        fillColor: "#AAAAAA",
+        fill: true
+      });
+    };
     return manager.load(function() {
-      var cursor, diamond, loader;
+      var cursor, diamond;
       engine.createSprites({
         "cursor": "images/cursor.png",
         "diamond": "images/diamond.png",
@@ -36,23 +69,12 @@
         "blue_inverted": "images/blue_inverted.png",
         "blue_shimmer": "images/blue_shimmer.png"
       });
-      loader = engine.createObject("loader");
-      loader.onStep = function() {
-        return true;
-      };
-      loader.onDraw = function() {
-        engine.draw.rectangle(0, 0, 800 * manager.file_progress, 64, {
-          fillColor: "#CCCCCC"
-        });
-        return engine.draw.rectangle(0, 64, 800 * manager.total_progress, 128, {
-          fillColor: "#AAAAAA"
-        });
-      };
       cursor = engine.createObject("cursor");
       cursor.sprite = engine.getSprite("cursor");
       cursor.onStep = function() {
         return $("#debug").html("Mouse coords: " + this.scene.mouse_x + " / " + this.scene.mouse_y + "<br>Frameskip: " + this.engine.frameskip);
       };
+      cursor.onDraw = function() {};
       diamond = engine.createObject("diamond");
       diamond.sprite = engine.getSprite("diamond");
       diamond.draw_sprite = false;
@@ -73,32 +95,12 @@
           alpha: this.shimmer_value
         });
       };
-      diamond.onMouseOver = function() {
+      return diamond.onMouseOver = function() {
         this.fade_value = this.engine.ease.quadInOut(0.3, 0.7, 10, this.engine.ease.bounceOut(0.7, 0.3, 65));
         cursor = this.engine.getObject("cursor").getInstances()[0];
         cursor.x = this.engine.ease.quadInOut(cursor.x, this.x - 9, 8);
         return cursor.y = this.engine.ease.quadInOut(cursor.y, this.y - 9, 8);
       };
-      engine.getScene("loader").onLoad = function() {
-        return this.createInstance(loader, 0, 0);
-      };
-      engine.getScene("main").onLoad = function() {
-        var x, y, _i, _results;
-        this.createInstance(cursor, 0, 0);
-        _results = [];
-        for (x = _i = 10; _i <= 728; x = _i += 80) {
-          _results.push((function() {
-            var _j, _results1;
-            _results1 = [];
-            for (y = _j = 10; _j <= 550; y = _j += 80) {
-              _results1.push(this.createInstance(diamond, x, y));
-            }
-            return _results1;
-          }).call(this));
-        }
-        return _results;
-      };
-      return engine.start();
     });
   });
 });

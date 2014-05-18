@@ -66,7 +66,8 @@ class ResourceManager
 		return @resource_objects.images[@joinPath(path)]
 			
 	updateProgress: (event) =>
-		@file_progress = event.progress
+		console.log(event)
+		@file_progress = event.loaded / event.total
 		
 	handleFinishedFile: (event) =>
 		switch event.item.type
@@ -78,8 +79,18 @@ class ResourceManager
 		if @current_stage == 2
 			@files_loaded += 1
 			@total_progress = @files_loaded / @files_total
+			
+	handleComplete: (event) =>
+		stage = @current_stage
 		
-	doPreload: (stage, progress_callback, finished_callback) =>
+		@finished_callback()
+		
+		if stage == 1
+			@engine?.switchPreloadScene()
+		else if stage == 2
+			@engine?.switchInitialScene()
+		
+	doPreload: (stage, progress_callback) =>
 		@current_stage = stage
 		
 		if stage == 1
@@ -111,17 +122,19 @@ class ResourceManager
 			@files_total += 1
 			@queue.loadFile({src: data_file, type: createjs.LoadQueue.JSON})
 		
-		@queue.on("progress", progress_callback)
+		@queue.on("fileprogress", progress_callback)
 		@queue.on("fileload", @handleFinishedFile)
-		@queue.on("complete", finished_callback)
+		@queue.on("complete", @handleComplete)
 		
 		@queue.load()
 		
 	prepare: (finished_callback = (->)) =>
 		# This performs a stage 1 preload, loading the initial assets required for displaying the preload screen.
-		@doPreload(1, (->), finished_callback.bind(this))
+		@finished_callback = finished_callback.bind(this)
+		@doPreload(1, (->))
 
 	load: (finished_callback = (->)) =>
 		# This performs the stage 2 preload; it will load the actual game assets.
-		@doPreload(2, @updateProgress, finished_callback.bind(this))
+		@finished_callback = finished_callback.bind(this)
+		@doPreload(2, @updateProgress)
 		

@@ -1,13 +1,13 @@
 Engine::draw =
-	_startPath: (surface, options) =>
-		surface = @getSurface(surface)
+	_startPath: (surface, options) ->
+		surface = @engine.getSurface(surface)
 		
 		if not options._is_text ? false
 			surface.beginPath()
 			
 		return surface
 	
-	_finishPath: (surface, options) =>
+	_finishPath: (surface, options) ->
 		if options.stroke ? true
 			surface.lineWidth = options.lineWidth ? options.pen?.lineWidth ? 1
 			surface.strokeStyle = options.lineColor ? options.pen?.lineColor ? "black"
@@ -25,13 +25,13 @@ Engine::draw =
 			else
 				surface.fill()
 	
-	_getTextWidth: (surface, text, options) =>
+	_getTextWidth: (surface, text, options) ->
 		@_applyTextContext(surface, options)
 		width = surface.measureText(text).width
 		surface.restore()
 		return width
 	
-	_applyTextContext: (surface, options) =>
+	_applyTextContext: (surface, options) ->
 		font_family = options.font ? "sans-serif"
 		font_size = options.size ? 16
 		font_weight = options.weight ? "normal"
@@ -43,25 +43,25 @@ Engine::draw =
 		surface.globalAlpha = options.alpha ? 1
 		surface.scale(scale, scale)
 	
-	line: (x1, y1, x2, y2, options = {}, surface = "") =>
+	line: (x1, y1, x2, y2, options = {}, surface = "") ->
 		surface = @_startPath(surface, options)
 		surface.moveTo(x1, y1)
 		surface.lineTo(x2, y2)
 		@_finishPath(surface, options)
 	
-	rectangle: (x1, y1, x2, y2, options = {}, surface = "") =>
+	rectangle: (x1, y1, x2, y2, options = {}, surface = "") ->
 		surface = @_startPath(surface, options)
 		surface.rect(x1, y1, x2 - x1, y2 - y1)
 		@_finishPath(surface, options)
 		
-	boxEllipse: (x1, y1, x2, y2, options = {}, surface = "") =>
+	boxEllipse: (x1, y1, x2, y2, options = {}, surface = "") ->
 		x = (x1 + x2) / 2;
 		y = (y1 + y2) / 2;
 		rx = (x2 - x1) / 2;
 		ry = (y2 - y1) / 2;
 		@radiusEllipse(x, y, rx, ry, options, surface)
 		
-	radiusEllipse: (x, y, rx, ry, options = {}, surface = "") =>
+	radiusEllipse: (x, y, rx, ry, options = {}, surface = "") ->
 		surface = @_startPath(surface, options)
 		
 		step = options.step ? 0.1
@@ -76,13 +76,13 @@ Engine::draw =
 				
 		@_finishPath(surface, options)
 		
-	boxPolygon: (x1, y1, x2, y2, sides, options = {}, surface = "") =>
+	boxPolygon: (x1, y1, x2, y2, sides, options = {}, surface = "") ->
 		pass # TODO
 		
-	radiusPolygon: (x, y, r, sides, options = {}, surface = "") =>
+	radiusPolygon: (x, y, r, sides, options = {}, surface = "") ->
 		pass # TODO
 		
-	text: (x, y, text, options = {}, surface = "") =>
+	text: (x, y, text, options = {}, surface = "") ->
 		# Defaults
 		options.alignment ?= "left"
 		options.scale ?= 1

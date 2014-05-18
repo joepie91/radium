@@ -13,7 +13,7 @@ class Scene
 		@last_width = 800
 		@last_height = 600
 		
-	callEvent: (name, data = {}) ->
+	callEvent: (name, data = {}) =>
 		event_map =
 			load: @onLoad
 		

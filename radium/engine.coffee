@@ -21,6 +21,9 @@ class Engine
 		# FUTURE: Iterate over easing methods and create an engine-bound version
 		#         in the local engine object, overriding the prototype methods?
 		@ease.engine = this
+		@draw.engine = this
+		
+		@resource_manager.engine = this
 
 	addCanvas: (canvas, label = "") =>
 		@canvases[label] = util.unpackElement(canvas)
@@ -43,7 +46,6 @@ class Engine
 		canvas.style.height = "#{h}px"
 	
 	start: () =>
-		@initial_scene.addTargetSurface(@canvases[""])
 		@loop()
 	
 	loop: () =>
@@ -52,7 +54,7 @@ class Engine
 	iteration: () =>
 		# Calculation of next frame and frameskip collection check
 		frame_interval = (1000 / @fps)
-
+		
 		current_frame = Date.now()
 		next_frame = current_frame + frame_interval
 		
@@ -102,6 +104,13 @@ class Engine
 		
 	setPreloadScene: (scene) =>
 		@preload_scene = scene
+			
+	switchPreloadScene: =>
+		@preload_scene.addTargetSurface(@canvases[""])
+		
+	switchInitialScene: =>
+		@preload_scene?.removeTargetSurface(@canvases[""])
+		@initial_scene.addTargetSurface(@canvases[""])
 			
 	createScene: (name) =>
 		scene = new Scene(this, name)

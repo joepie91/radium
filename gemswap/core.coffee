@@ -23,20 +23,40 @@ $(->
 		"images/blue_shimmer.png"
 	])
 
-	###
-	manager.addSounds([
-		"sfx/match.wav"
-		"sfx/swap.wav"
-	])
-	###
+	###manager.addSounds([
+		"music/music.wav"
+	])###
+	
+	# Set up the engine
+	engine.addCanvas($("#gamecanvas"));
+	engine.setPreloadScene(engine.createScene("loader"))
+	engine.setInitialScene(engine.createScene("main"))
 	
 	manager.prepare ->
-		# Set up the engine
-		engine.addCanvas($("#gamecanvas"));
+		# Let's go!
+		engine.start()
 		
-		engine.setPreloadScene(engine.createScene("loader"))
-		engine.setInitialScene(engine.createScene("main"))
-		
+		# Scene configuration
+		engine.getScene("loader").onLoad = ->
+			# Loading screen
+			@createInstance("loader", 0, 0)
+
+		engine.getScene("main").onLoad = ->
+			# Actual game initialization
+			@createInstance("cursor", 0, 0)
+
+			for x in [10 .. 728] by 80
+				for y in [10 .. 550] by 80
+					@createInstance("diamond", x, y)
+					
+		# Loader object
+		loader = engine.createObject("loader")
+
+		loader.onStep = -> true
+		loader.onDraw = ->
+			engine.draw.rectangle(0, 0, 800 * manager.file_progress, 64, {fillColor: "#CCCCCC", fill: true})
+			engine.draw.rectangle(0, 64, 800 * manager.total_progress, 128, {fillColor: "#AAAAAA", fill: true})
+
 		manager.load ->
 			# Game asset initialization...
 			engine.createSprites({
@@ -53,18 +73,14 @@ $(->
 			})
 			
 			# Object definitions
-			loader = engine.createObject("loader")
-
-			loader.onStep = -> true
-			loader.onDraw = ->
-				engine.draw.rectangle(0, 0, 800 * manager.file_progress, 64, {fillColor: "#CCCCCC"})
-				engine.draw.rectangle(0, 64, 800 * manager.total_progress, 128, {fillColor: "#AAAAAA"})
-			
 			cursor = engine.createObject("cursor")
 			cursor.sprite = engine.getSprite("cursor")
 			
 			cursor.onStep = ->
 				$("#debug").html("Mouse coords: #{@scene.mouse_x} / #{@scene.mouse_y}<br>Frameskip: #{@engine.frameskip}")
+				
+			cursor.onDraw = ->
+				#engine.draw.rectangle(20, 20, 400, 400, {fillColor: "#FFFFFF", fill: true})
 			
 			diamond = engine.createObject("diamond")
 			diamond.sprite = engine.getSprite("diamond")
@@ -95,21 +111,5 @@ $(->
 				cursor = @engine.getObject("cursor").getInstances()[0]
 				cursor.x = @engine.ease.quadInOut(cursor.x, @x - 9, 8)
 				cursor.y = @engine.ease.quadInOut(cursor.y, @y - 9, 8)
-			
-			# Scene configuration
-			engine.getScene("loader").onLoad = ->
-				# Loading screen
-				@createInstance(loader, 0, 0)
-
-			engine.getScene("main").onLoad = ->
-				# Actual game initialization
-				@createInstance(cursor, 0, 0)
-				
-				for x in [10 .. 728] by 80
-					for y in [10 .. 550] by 80
-						@createInstance(diamond, x, y)
-			
-			# Let's go!
-			engine.start()
 			
 )
