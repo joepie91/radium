@@ -4,7 +4,7 @@ A game engine, under development. Currently being rewritten in Coffeescript.
 
 ## Setup
 
-To install dependencies you need for developing on Radium: `npm install`
+To install dependencies you need for developing on Radium: `npm install`. If you don't have `npm`, install NodeJS - npm is included.
 
 Note that `coffee-script` may fail to install; in that case, you'll need to install it manually (and you can ignore the error from the previous command): `sudo npm install -g coffee-script`
 
