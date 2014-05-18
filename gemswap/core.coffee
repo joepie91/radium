@@ -54,6 +54,13 @@ $(->
 			engine.createSprite("blue_shimmer", "images/blue_shimmer.png")
 			
 			# Object definitions
+			loader = engine.createObject("loader")
+
+			loader.onStep = -> true
+			loader.onDraw = ->
+				engine.draw.rectangle(0, 0, 800 * manager.file_progress, 64, {fillColor: "#CCCCCC"})
+				engine.draw.rectangle(0, 64, 800 * manager.total_progress, 128, {fillColor: "#AAAAAA"})
+			
 			cursor = engine.createObject("cursor")
 			cursor.sprite = engine.getSprite("cursor")
 			
@@ -93,13 +100,6 @@ $(->
 			# Scene configuration
 			engine.getScene("loader").onLoad = ->
 				# Loading screen
-				loader = engine.createObject("loader")
-
-				loader.onStep = -> true
-				loader.onDraw = ->
-					engine.draw.rectangle(0, 0, 800 * manager.file_progress, 64, {fillColor: "#CCCCCC"})
-					engine.draw.rectangle(0, 64, 800 * manager.total_progress, 128, {fillColor: "#AAAAAA"})
-
 				@createInstance(loader, 0, 0)
 
 			engine.getScene("main").onLoad = ->

@@ -23,7 +23,7 @@
     engine.setPreloadScene(engine.createScene("loader"));
     engine.setInitialScene(engine.createScene("main"));
     return manager.load(function() {
-      var cursor, diamond;
+      var cursor, diamond, loader;
       engine.createSprite("cursor", "images/cursor.png");
       engine.createSprite("diamond", "images/diamond.png");
       engine.createSprite("diamond_inverted", "images/diamond_inverted.png");
@@ -34,6 +34,18 @@
       engine.createSprite("blue", "images/blue.png");
       engine.createSprite("blue_inverted", "images/blue_inverted.png");
       engine.createSprite("blue_shimmer", "images/blue_shimmer.png");
+      loader = engine.createObject("loader");
+      loader.onStep = function() {
+        return true;
+      };
+      loader.onDraw = function() {
+        engine.draw.rectangle(0, 0, 800 * manager.file_progress, 64, {
+          fillColor: "#CCCCCC"
+        });
+        return engine.draw.rectangle(0, 64, 800 * manager.total_progress, 128, {
+          fillColor: "#AAAAAA"
+        });
+      };
       cursor = engine.createObject("cursor");
       cursor.sprite = engine.getSprite("cursor");
       cursor.onStep = function() {
@@ -66,19 +78,6 @@
         return cursor.y = this.engine.ease.quadInOut(cursor.y, this.y - 9, 8);
       };
       engine.getScene("loader").onLoad = function() {
-        var loader;
-        loader = engine.createObject("loader");
-        loader.onStep = function() {
-          return true;
-        };
-        loader.onDraw = function() {
-          engine.draw.rectangle(0, 0, 800 * manager.file_progress, 64, {
-            fillColor: "#CCCCCC"
-          });
-          return engine.draw.rectangle(0, 64, 800 * manager.total_progress, 128, {
-            fillColor: "#AAAAAA"
-          });
-        };
         return this.createInstance(loader, 0, 0);
       };
       engine.getScene("main").onLoad = function() {
