@@ -9,6 +9,7 @@ var cache = require('gulp-cached');
 var remember = require('gulp-remember');
 var header = require('gulp-header');
 var footer = require('gulp-footer');
+var plumber = require('gulp-plumber');
 
 /* Engine build tasks */
 engine = {
@@ -23,12 +24,13 @@ engine = {
 
 gulp.task('dev-engine', function() {
 	return gulp.src(engine.source)
+		.pipe(plumber())
 		.pipe(cache("engine-coffee"))
 		.pipe(coffee({bare: true}).on('error', gutil.log)).on('data', gutil.log)
 		.pipe(remember("engine-coffee"))
 		.pipe(concat("radium.coffee.js"))
 		.pipe(header('(function () {'))
-		.pipe(footer('})();'))
+		.pipe(footer('; window.ResourceManager = ResourceManager; window.Engine = Engine; })();'))
 		.pipe(addsrc(engine.external))
 		.pipe(concat("radium.concat.js"))
 		.pipe(rename(engine.target.name))
@@ -55,6 +57,7 @@ gemswap = {
 
 gulp.task('dev-gemswap', function() {
 	return gulp.src(gemswap.source)
+		.pipe(plumber())
 		.pipe(cache("gemswap-coffee"))
 		.pipe(coffee({bare: true}).on('error', gutil.log)).on('data', gutil.log)
 		.pipe(remember("gemswap-coffee"))

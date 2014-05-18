@@ -33,6 +33,12 @@ class ResourceManager
 			@resources.stage1_scripts.push(@joinPath(path))
 		else
 			@resources.scripts.push(@joinPath(path))
+			
+	addDataFile: (path, first_stage = false) =>
+		if first_stage
+			@resources.stage1_data.push(@joinPath(path))
+		else
+			@resources.data.push(@joinPath(path))
 
 	addImages: (paths, first_stage = false) =>
 		@addImage(path, first_stage) for path in paths
@@ -43,21 +49,41 @@ class ResourceManager
 	addSounds: (paths, first_stage = false) =>
 		@addSound(path, first_stage) for path in paths
 			
+	addDataFiles: (paths, first_stage = false) =>
+		@addDataFile(path, first_stage) for path in paths
+			
 	getImage: (path) =>
 		# FIXME: Do properly when PreloadJS is added
 		console.log("objs", @resource_objects)
 		console.log("path", path)
 		return @resource_objects.images[@joinPath(path)]
 			
-	prepare: (finished_callback = (->)) =>
-		# This performs a stage 1 preload, loading the initial assets required for displaying the preload screen.
+	updateProgress: (event) =>
 		pass
-
-	preload: (progress_callback = (->), finished_callback = (->)) =>
-		# This performs the stage 2 preload; it will load the actual game assets.
-		for image in @resources.images
+		
+	do_preload: (stage, progress_callback, finished_callback) =>
+		if stage == 1
+			images = @resources.stage1_images
+			scripts = @resources.stage1_scripts
+			sounds = @resources.stage1_sounds
+		else
+			images = @resources.images
+			scripts = @resources.scripts
+			sounds = @resources.sounds
+			
+		for image in images
 			obj = document.createElement("img")
 			obj.src = image
 			@resource_objects.images[image] = obj
 			
+		console.log("done stage " + stage)
 		finished_callback()
+		
+	prepare: (finished_callback = (->)) =>
+		# This performs a stage 1 preload, loading the initial assets required for displaying the preload screen.
+		@do_preload(1, (->), finished_callback)
+
+	load: () =>
+		# This performs the stage 2 preload; it will load the actual game assets.
+		@do_preload(2, @updateProgress, @onLoad?.bind(this) ? (->))
+		

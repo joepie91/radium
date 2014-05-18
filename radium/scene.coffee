@@ -1,5 +1,8 @@
 class Scene
 	constructor: (@engine, @name) ->
+		@reset()
+		
+	reset: =>
 		@instances = {}
 		@surfaces = []
 		@dirty = true # Triggers first draw
@@ -9,6 +12,16 @@ class Scene
 		@height = 600
 		@last_width = 800
 		@last_height = 600
+		
+	callEvent: (name, data = {}) ->
+		event_map =
+			load: @onLoad
+		
+		switch name
+			when "destroy"
+				@destroySelf()
+				@onDestroy?(data)
+			else event_map[name]?.bind(this)(data)
 		
 	addTargetSurface: (surface) =>
 		@surfaces.push(surface)
@@ -53,7 +66,16 @@ class Scene
 		@checkActive()
 		
 	checkActive: =>
-		@active = (@surfaces.length > 0)
+		active_now = (@surfaces.length > 0)
+		
+		if @active and not active_now
+			# Deactivated
+			@callEvent("destroy")
+		else if not @active and active_now
+			# Activated
+			@callEvent("load")
+			
+		@active = active_now
 		
 	iteration: =>
 		if @width != @last_width or @height != @last_height
@@ -104,3 +126,6 @@ class Scene
 	changeScene: (scene) =>
 		# This will change to a different scene, but inherit the target surfaces
 		pass
+	
+	destroySelf: =>
+		@reset

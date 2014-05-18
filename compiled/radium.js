@@ -1322,12 +1322,16 @@ var ResourceManager,
 ResourceManager = (function() {
   function ResourceManager(base_path) {
     this.base_path = base_path != null ? base_path : "";
-    this.preload = __bind(this.preload, this);
+    this.load = __bind(this.load, this);
     this.prepare = __bind(this.prepare, this);
+    this.do_preload = __bind(this.do_preload, this);
+    this.updateProgress = __bind(this.updateProgress, this);
     this.getImage = __bind(this.getImage, this);
+    this.addDataFiles = __bind(this.addDataFiles, this);
     this.addSounds = __bind(this.addSounds, this);
     this.addScripts = __bind(this.addScripts, this);
     this.addImages = __bind(this.addImages, this);
+    this.addDataFile = __bind(this.addDataFile, this);
     this.addScript = __bind(this.addScript, this);
     this.addSound = __bind(this.addSound, this);
     this.addImage = __bind(this.addImage, this);
@@ -1388,6 +1392,17 @@ ResourceManager = (function() {
     }
   };
 
+  ResourceManager.prototype.addDataFile = function(path, first_stage) {
+    if (first_stage == null) {
+      first_stage = false;
+    }
+    if (first_stage) {
+      return this.resources.stage1_data.push(this.joinPath(path));
+    } else {
+      return this.resources.data.push(this.joinPath(path));
+    }
+  };
+
   ResourceManager.prototype.addImages = function(paths, first_stage) {
     var path, _i, _len, _results;
     if (first_stage == null) {
@@ -1427,35 +1442,60 @@ ResourceManager = (function() {
     return _results;
   };
 
+  ResourceManager.prototype.addDataFiles = function(paths, first_stage) {
+    var path, _i, _len, _results;
+    if (first_stage == null) {
+      first_stage = false;
+    }
+    _results = [];
+    for (_i = 0, _len = paths.length; _i < _len; _i++) {
+      path = paths[_i];
+      _results.push(this.addDataFile(path, first_stage));
+    }
+    return _results;
+  };
+
   ResourceManager.prototype.getImage = function(path) {
     console.log("objs", this.resource_objects);
     console.log("path", path);
     return this.resource_objects.images[this.joinPath(path)];
   };
 
-  ResourceManager.prototype.prepare = function(finished_callback) {
-    if (finished_callback == null) {
-      finished_callback = (function() {});
-    }
+  ResourceManager.prototype.updateProgress = function(event) {
     return pass;
   };
 
-  ResourceManager.prototype.preload = function(progress_callback, finished_callback) {
-    var image, obj, _i, _len, _ref;
-    if (progress_callback == null) {
-      progress_callback = (function() {});
+  ResourceManager.prototype.do_preload = function(stage, progress_callback, finished_callback) {
+    var image, images, obj, scripts, sounds, _i, _len;
+    if (stage === 1) {
+      images = this.resources.stage1_images;
+      scripts = this.resources.stage1_scripts;
+      sounds = this.resources.stage1_sounds;
+    } else {
+      images = this.resources.images;
+      scripts = this.resources.scripts;
+      sounds = this.resources.sounds;
     }
-    if (finished_callback == null) {
-      finished_callback = (function() {});
-    }
-    _ref = this.resources.images;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      image = _ref[_i];
+    for (_i = 0, _len = images.length; _i < _len; _i++) {
+      image = images[_i];
       obj = document.createElement("img");
       obj.src = image;
       this.resource_objects.images[image] = obj;
     }
+    console.log("done stage " + stage);
     return finished_callback();
+  };
+
+  ResourceManager.prototype.prepare = function(finished_callback) {
+    if (finished_callback == null) {
+      finished_callback = (function() {});
+    }
+    return this.do_preload(1, (function() {}), finished_callback);
+  };
+
+  ResourceManager.prototype.load = function() {
+    var _ref, _ref1;
+    return this.do_preload(2, this.updateProgress, (_ref = (_ref1 = this.onLoad) != null ? _ref1.bind(this) : void 0) != null ? _ref : (function() {}));
   };
 
   return ResourceManager;
@@ -1469,6 +1509,7 @@ Scene = (function() {
   function Scene(engine, name) {
     this.engine = engine;
     this.name = name;
+    this.destroySelf = __bind(this.destroySelf, this);
     this.changeScene = __bind(this.changeScene, this);
     this.createInstance = __bind(this.createInstance, this);
     this.checkMouseCollisions = __bind(this.checkMouseCollisions, this);
@@ -1478,6 +1519,11 @@ Scene = (function() {
     this.removeTargetSurface = __bind(this.removeTargetSurface, this);
     this.handleClick = __bind(this.handleClick, this);
     this.addTargetSurface = __bind(this.addTargetSurface, this);
+    this.reset = __bind(this.reset, this);
+    this.reset();
+  }
+
+  Scene.prototype.reset = function() {
     this.instances = {};
     this.surfaces = [];
     this.dirty = true;
@@ -1486,8 +1532,25 @@ Scene = (function() {
     this.width = 800;
     this.height = 600;
     this.last_width = 800;
-    this.last_height = 600;
-  }
+    return this.last_height = 600;
+  };
+
+  Scene.prototype.callEvent = function(name, data) {
+    var event_map, _ref;
+    if (data == null) {
+      data = {};
+    }
+    event_map = {
+      load: this.onLoad
+    };
+    switch (name) {
+      case "destroy":
+        this.destroySelf();
+        return typeof this.onDestroy === "function" ? this.onDestroy(data) : void 0;
+      default:
+        return (_ref = event_map[name]) != null ? _ref.bind(this)(data) : void 0;
+    }
+  };
 
   Scene.prototype.addTargetSurface = function(surface) {
     this.surfaces.push(surface);
@@ -1551,7 +1614,14 @@ Scene = (function() {
   };
 
   Scene.prototype.checkActive = function() {
-    return this.active = this.surfaces.length > 0;
+    var active_now;
+    active_now = this.surfaces.length > 0;
+    if (this.active && !active_now) {
+      this.callEvent("destroy");
+    } else if (!this.active && active_now) {
+      this.callEvent("load");
+    }
+    return this.active = active_now;
   };
 
   Scene.prototype.iteration = function() {
@@ -1644,6 +1714,10 @@ Scene = (function() {
 
   Scene.prototype.changeScene = function(scene) {
     return pass;
+  };
+
+  Scene.prototype.destroySelf = function() {
+    return this.reset;
   };
 
   return Scene;
@@ -1794,11 +1868,7 @@ util = {
     }
   }
 };
-
-window.ResourceManager = ResourceManager;
-
-window.Engine = Engine;
-})();
+; window.ResourceManager = ResourceManager; window.Engine = Engine; })();
 /*!
  * jQuery JavaScript Library v2.1.1
  * http://jquery.com/

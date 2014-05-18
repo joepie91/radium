@@ -14,6 +14,7 @@
 		"gulp-remember": "0.2.x",
 		"gulp-header": "1.0.x",
 		"gulp-footer": "1.0.x",
+		"gulp-plumber": "0.6.x",
 		"coffee-script": "1.7.x"
 	}
 }
