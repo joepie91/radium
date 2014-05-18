@@ -1,0 +1,19 @@
+{
+	"name": "radium",
+	"description": "A game engine.",
+	"version": "0.0.1",
+	"devDependencies": {
+		"gulp": "3.6.x",
+		"gulp-add-src": "0.1.x",
+		"gulp-coffee": "1.4",
+		"gulp-concat": "2.2.x",
+		"gulp-rename": "1.2.x",
+		"gulp-uglify": "0.3.x",
+		"gulp-util": "2.2.x",
+		"gulp-cached": "0.0.x",
+		"gulp-remember": "0.2.x",
+		"gulp-header": "1.0.x",
+		"gulp-footer": "1.0.x",
+		"coffee-script": "1.7.x"
+	}
+}
