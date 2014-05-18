@@ -1490,12 +1490,14 @@ ResourceManager = (function() {
     if (finished_callback == null) {
       finished_callback = (function() {});
     }
-    return this.do_preload(1, (function() {}), finished_callback);
+    return this.do_preload(1, (function() {}), finished_callback.bind(this));
   };
 
-  ResourceManager.prototype.load = function() {
-    var _ref, _ref1;
-    return this.do_preload(2, this.updateProgress, (_ref = (_ref1 = this.onLoad) != null ? _ref1.bind(this) : void 0) != null ? _ref : (function() {}));
+  ResourceManager.prototype.load = function(finished_callback) {
+    if (finished_callback == null) {
+      finished_callback = (function() {});
+    }
+    return this.do_preload(2, this.updateProgress, finished_callback.bind(this));
   };
 
   return ResourceManager;

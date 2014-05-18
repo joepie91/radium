@@ -37,7 +37,7 @@ $(->
 		engine.setPreloadScene(engine.createScene("loader"))
 		engine.setInitialScene(engine.createScene("main"))
 		
-		manager.onLoad = ->
+		manager.load ->
 			# Game asset initialization...
 			engine.createSprite("cursor", "images/cursor.png")
 
@@ -112,7 +112,5 @@ $(->
 			
 			# Let's go!
 			engine.start()
-		
-		manager.load()
 			
 )

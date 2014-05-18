@@ -81,9 +81,9 @@ class ResourceManager
 		
 	prepare: (finished_callback = (->)) =>
 		# This performs a stage 1 preload, loading the initial assets required for displaying the preload screen.
-		@do_preload(1, (->), finished_callback)
+		@do_preload(1, (->), finished_callback.bind(this))
 
-	load: () =>
+	load: (finished_callback = (->)) =>
 		# This performs the stage 2 preload; it will load the actual game assets.
-		@do_preload(2, @updateProgress, @onLoad?.bind(this) ? (->))
+		@do_preload(2, @updateProgress, finished_callback.bind(this))
 		

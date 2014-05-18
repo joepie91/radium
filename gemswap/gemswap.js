@@ -22,7 +22,7 @@
     engine.addCanvas($("#gamecanvas"));
     engine.setPreloadScene(engine.createScene("loader"));
     engine.setInitialScene(engine.createScene("main"));
-    manager.onLoad = function() {
+    return manager.load(function() {
       var cursor, diamond;
       engine.createSprite("cursor", "images/cursor.png");
       engine.createSprite("diamond", "images/diamond.png");
@@ -98,8 +98,7 @@
         return _results;
       };
       return engine.start();
-    };
-    return manager.load();
+    });
   });
 });
 })();
