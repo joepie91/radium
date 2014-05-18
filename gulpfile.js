@@ -11,6 +11,9 @@ var header = require('gulp-header');
 var footer = require('gulp-footer');
 var plumber = require('gulp-plumber');
 
+/* Configuration */
+var experiments = ["drag", "easing"]
+
 /* Engine build tasks */
 engine = {
 	source: "radium/*.coffee",
@@ -43,6 +46,45 @@ gulp.task("prod-engine", ["dev-engine"], function(){
 		.pipe(rename(engine.target.minName))
 		.pipe(gulp.dest(engine.target.path));
 });
+
+/* Experiment build tasks */
+var experiment_settings = {};
+
+for(var i in experiments)
+{
+	var name = experiments[i];
+	
+	experiment_settings[name] = {
+		source: "experiments/" + name + "/*.coffee",
+		external: "",
+		target: {
+			path: "experiments",
+			name: name + ".js",
+			minName: name + ".min.js"
+		}
+	}
+
+	gulp.task('dev-' + name, function() {
+		return gulp.src(experiment_settings[name].source)
+			.pipe(plumber())
+			.pipe(cache(name))
+			.pipe(coffee({bare: true}).on('error', gutil.log)).on('data', gutil.log)
+			.pipe(remember(name))
+			.pipe(concat(name + ".coffee.js"))
+			.pipe(header('(function () {'))
+			.pipe(footer('})();'))
+			.pipe(concat(name + ".concat.js"))
+			.pipe(rename(experiment_settings[name].target.name))
+			.pipe(gulp.dest(experiment_settings[name].target.path));
+	});
+
+	gulp.task("prod-" + name, ["dev-" + name], function(){
+		return gulp.src(experiment_settings[name].target.path + "/" + experiment_settings[name].target.name)
+			.pipe(uglify())
+			.pipe(rename(experiment_settings[name].target.minName))
+			.pipe(gulp.dest(experiment_settings[name].target.path));
+	});
+}
 
 /* Sample game build tasks */
 gemswap = {
@@ -79,21 +121,26 @@ gulp.task("prod-gemswap", ["dev-gemswap"], function(){
 
 /* Watcher */
 gulp.task('watch', function () {
-	targets = {
+	var targets = {
 		"gemswap": gemswap,
 		"engine": engine
 	}
-
-	for(name in targets)
+	
+	for (var attrname in experiment_settings) { targets[attrname] = experiment_settings[attrname]; }
+	
+	for(var tname in targets)
 	{
-		var watcher = gulp.watch(targets[name].source, ['dev-' + name]);
+		var watcher = gulp.watch(targets[tname].source, ['dev-' + tname]);
 		watcher.on('change', function (event) {
 			if (event.type === 'deleted')
 			{
-				delete cache.caches[name + '-coffee'][event.path];
-				remember.forget(name + '-coffee', event.path);
+				delete cache.caches[tname + '-coffee'][event.path];
+				remember.forget(tname + '-coffee', event.path);
 			}
 		});
+		
+		/* Initial build */
+		gulp.start("dev-" + tname);
 	}
 });
 
